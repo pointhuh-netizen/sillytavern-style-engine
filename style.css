@@ -1,0 +1,313 @@
+/* style.css — Style Engine extension stylesheet */
+/* Uses SillyTavern CSS variables for theme compatibility. */
+
+:root {
+    --sse-breakpoint-mobile: 500px;
+}
+
+/* ── Panel ──────────────────────────────────────────────────────────────── */
+
+.sse-panel {
+    padding: 10px;
+    color: var(--SmartThemeBodyColor, #ccc);
+    font-family: inherit;
+}
+
+.sse-header {
+    margin-bottom: 12px;
+}
+
+.sse-title {
+    margin: 0 0 4px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--SmartThemeBodyColor, #ddd);
+}
+
+.sse-subtitle {
+    margin: 0;
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+/* ── Loading / Error ────────────────────────────────────────────────────── */
+
+.sse-loading {
+    padding: 12px;
+    text-align: center;
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.sse-error {
+    padding: 10px;
+    color: #f88;
+    background: rgba(255, 60, 60, 0.1);
+    border: 1px solid rgba(255, 60, 60, 0.4);
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* ── Sections ───────────────────────────────────────────────────────────── */
+
+.sse-section {
+    margin-bottom: 16px;
+    padding: 10px;
+    background: var(--SmartThemeChatBG, rgba(0,0,0,0.15));
+    border-radius: 6px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
+}
+
+.sse-section-header {
+    margin: 0 0 10px;
+    font-size: 0.95em;
+    font-weight: bold;
+    opacity: 0.9;
+}
+
+/* ── Config selector ────────────────────────────────────────────────────── */
+
+.sse-config-section {
+    margin-bottom: 10px;
+}
+
+.sse-section-title {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin: 0 0 6px;
+    opacity: 0.85;
+}
+
+.sse-select {
+    width: 100%;
+    padding: 5px 8px;
+    background: var(--SmartThemeBlurTintColor, rgba(0,0,0,0.3));
+    color: var(--SmartThemeBodyColor, #ccc);
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.15));
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* ── Axis selector ──────────────────────────────────────────────────────── */
+
+.sse-axis-section {
+    margin-bottom: 14px;
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 3px solid var(--SmartThemeQuoteColor, #7ab8e8);
+    background: rgba(255,255,255,0.03);
+}
+
+.sse-axis-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.sse-option-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.88em;
+    padding: 3px 4px;
+    border-radius: 3px;
+    line-height: 1.4;
+    transition: background 0.15s;
+}
+
+.sse-option-label:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+.sse-option-label input {
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--SmartThemeQuoteColor, #7ab8e8);
+}
+
+/* ── Conflict warnings ──────────────────────────────────────────────────── */
+
+.sse-conflict-warnings {
+    margin: 10px 0;
+    padding: 10px;
+    background: rgba(255, 200, 0, 0.08);
+    border: 1px solid rgba(255, 200, 0, 0.4);
+    border-radius: 4px;
+}
+
+.sse-conflict-item {
+    font-size: 0.88em;
+    color: #ffd;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+/* ── Actions ────────────────────────────────────────────────────────────── */
+
+.sse-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.sse-btn-preview {
+    background: var(--SmartThemeQuoteColor, #7ab8e8) !important;
+    color: #000 !important;
+}
+
+/* ── Preset section ─────────────────────────────────────────────────────── */
+
+.sse-presets-section {
+    font-size: 0.9em;
+}
+
+.sse-preset-controls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+    align-items: center;
+}
+
+.sse-input {
+    flex: 1;
+    padding: 5px 8px;
+    background: var(--SmartThemeBlurTintColor, rgba(0,0,0,0.3));
+    color: var(--SmartThemeBodyColor, #ccc);
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.15));
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* ── Preview popup ──────────────────────────────────────────────────────── */
+
+.sse-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.sse-popup {
+    background: var(--SmartThemeChatBG, #1e1e1e);
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.2));
+    border-radius: 8px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.sse-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
+}
+
+.sse-popup-header h3 {
+    margin: 0;
+    font-size: 1em;
+    color: var(--SmartThemeBodyColor, #ddd);
+}
+
+.sse-popup-close {
+    background: none;
+    border: none;
+    color: var(--SmartThemeBodyColor, #ccc);
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.sse-popup-close:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.sse-popup-body {
+    flex: 1;
+    overflow: hidden;
+    padding: 12px 16px;
+    display: flex;
+}
+
+.sse-preview-textarea {
+    width: 100%;
+    min-height: 300px;
+    resize: vertical;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+    padding: 10px;
+    background: var(--SmartThemeBlurTintColor, rgba(0,0,0,0.4));
+    color: var(--SmartThemeBodyColor, #ddd);
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.sse-popup-footer {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
+    justify-content: flex-end;
+}
+
+.sse-btn-copy {
+    background: rgba(255,255,255,0.1) !important;
+}
+
+.sse-btn-apply {
+    background: var(--SmartThemeQuoteColor, #7ab8e8) !important;
+    color: #000 !important;
+}
+
+/* ── Scrollbar styling ──────────────────────────────────────────────────── */
+
+.sse-axis-controls::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sse-axis-controls::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sse-axis-controls::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+/* Note: CSS custom properties cannot be used in @media conditions.
+   --sse-breakpoint-mobile (500px) is defined in :root for reference only. */
+@media (max-width: 500px) {
+    .sse-popup {
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .sse-preset-controls {
+        flex-direction: column;
+    }
+
+    .sse-preset-controls .sse-input,
+    .sse-preset-controls .sse-select {
+        width: 100%;
+    }
+}
