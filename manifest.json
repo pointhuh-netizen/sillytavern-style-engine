@@ -1,0 +1,12 @@
+{
+  "display_name": "Style Engine",
+  "loading_order": 1,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "pointhuh-netizen",
+  "version": "0.1.0",
+  "homePage": "https://github.com/pointhuh-netizen/sillytavern-style-engine",
+  "auto_update": true
+}
