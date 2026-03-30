@@ -93,6 +93,9 @@ function renderPopup() {
 
     // 현재 적용된 빌드 요약 표시
     updateBuildSummary();
+
+    // [추가됨] 팝업을 열었을 때 초기 상태로 자동 빌드 및 미리보기 렌더링
+    runBuild(); 
 }
 
 /**
@@ -226,62 +229,22 @@ function bindPopupEvents() {
         updateConflictDisplay();
     });
 
-    // 모듈 선택 (축별 mutex/combinable)
-    $popup.on('change', '.se-module-input', function () {
-        const $input = $(this);
-        const moduleId = $input.val();
-        const axisKey = $input.closest('.se-module-card').data('axis');
-        const axisInfo = _loadedData.catalog.axes[axisKey];
-        const isMutex = axisInfo?.type === 'mutex';
-
-        if (isMutex) {
-            // mutex: 같은 축의 기존 선택 제거 후 새 선택 추가
-            _state.selectedModules = _state.selectedModules.filter(
-                (id) => !id.startsWith(`${axisKey}-`)
-            );
-            if ($input.is(':checked')) {
-                _state.selectedModules.push(moduleId);
-            }
-        } else {
-            // combinable: 토글
-            if ($input.is(':checked')) {
-                if (!_state.selectedModules.includes(moduleId)) {
-                    _state.selectedModules.push(moduleId);
-                }
-            } else {
-                _state.selectedModules = _state.selectedModules.filter((id) => id !== moduleId);
-            }
-        }
-
-        // 카드 스타일 업데이트
-        $popup.find(`.se-module-card`).each(function () {
-            const id = $(this).data('module-id');
-            $(this).toggleClass('selected', _state.selectedModules.includes(id));
-        });
-
-        updateConflictDisplay();
-        updateBuildSummary();
-    });
-
-    // config 선택
+// config 선택
     $popup.on('change', 'input[type="radio"][name^="config-"]', function () {
         const $input = $(this);
         const cfgMetaId = $input.attr('name').replace('config-', '');
         const cfgMeta = _loadedData.catalog.configs.find((c) => c.id === cfgMetaId);
         if (!cfgMeta) return;
 
-        // 해당 config의 기존 선택 제거
         const modeIds = cfgMeta.modes || [];
         _state.selectedConfigs = _state.selectedConfigs.filter(
             (id) => !modeIds.includes(id)
         );
-        // 새 선택 추가
         const newModeId = $input.val();
         if (newModeId) {
             _state.selectedConfigs.push(newModeId);
         }
 
-        // 카드 스타일 업데이트
         $popup.find('.se-config-mode').each(function () {
             const modeVal = $(this).find('input').val();
             $(this).toggleClass('selected', _state.selectedConfigs.includes(modeVal));
@@ -289,11 +252,9 @@ function bindPopupEvents() {
 
         updateConflictDisplay();
         updateBuildSummary();
-    });
 
-    // 빌드 버튼
-    $popup.on('click', '#se-btn-build', function () {
-        runBuild();
+        // [추가됨] 설정 변경 시 자동 빌드(미리보기 갱신)
+        runBuild(); 
     });
 
     // 적용 버튼
@@ -311,7 +272,9 @@ function bindPopupEvents() {
         renderConfigSection($popup, _loadedData.catalog);
         updateConflictDisplay();
         updateBuildSummary();
-        $popup.find('.se-preview-content').text('');
+        
+        // [수정됨] 텍스트 임의 삭제 대신 자동 빌드로 빈 상태 반영
+        runBuild(); 
     });
 
     // 닫기 버튼
@@ -322,7 +285,6 @@ function bindPopupEvents() {
     // 외부 클릭 시 닫기
     $(document).on('click.style-engine-outside', function (e) {
         if ($popup.is(':visible') && !$(e.target).closest('#style-engine-popup').length) {
-            // 팝업 외부 클릭 — 닫지 않음 (의도적으로 유지)
         }
     });
 }
