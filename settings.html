@@ -1,27 +1,28 @@
-<!-- settings.html — ST 확장 설정 패널 삽입 HTML -->
-<div id="style-engine-settings" class="se-settings-panel">
-    <div class="se-settings-header">
+<div id="style-engine-settings" class="se-settings-panel inline-drawer">
+    <div class="se-settings-header inline-drawer-toggle inline-drawer-header">
         <span class="se-settings-icon">✍️</span>
-        <span class="se-settings-title">Style Engine — 문체 조합 빌더</span>
-        <label class="se-toggle-label" title="프롬프트 주입 활성화/비활성화">
-            <input type="checkbox" id="style-engine-enabled-toggle" checked />
-            <span class="se-toggle-switch"></span>
-            <span class="se-toggle-text">ON</span>
-        </label>
+        <b>Style Engine — 문체 조합 빌더</b>
+        <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
     </div>
-    <div class="se-settings-body">
-        <div class="se-settings-current">
-            <div class="se-settings-label">현재 적용된 빌드</div>
-            <div id="style-engine-current-build" class="se-settings-build-summary">적용된 빌드 없음</div>
+
+    <div class="se-settings-body inline-drawer-content" style="display: none; padding-top: 10px;">
+        <div class="se-settings-row" style="margin-bottom: 10px;">
+            <label class="se-toggle-label" title="프롬프트 주입 활성화/비활성화">
+                <input type="checkbox" id="style-engine-enabled-toggle" checked />
+                <span class="se-toggle-text">빌더 주입 활성화 (ON/OFF)</span>
+            </label>
         </div>
-        <div class="se-settings-actions">
-            <button id="style-engine-open-btn" class="se-btn se-btn-primary">
+
+        <div class="se-settings-current" style="margin-bottom: 10px;">
+            <div class="se-settings-label" style="font-weight: bold; margin-bottom: 5px;">현재 적용된 빌드</div>
+            <div id="style-engine-current-build" class="se-settings-build-summary" style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 5px;">적용된 빌드 없음</div>
+        </div>
+
+        <div class="se-settings-actions" style="display: flex; gap: 10px;">
+            <button id="style-engine-open-btn" class="menu_button">
                 ✍️ 문체 빌더 열기
             </button>
-            <button id="style-engine-newwindow-btn" class="se-btn se-btn-secondary">
-                🪟 새 창으로 열기
-            </button>
-            <button id="style-engine-clear-btn" class="se-btn se-btn-secondary" disabled>
+            <button id="style-engine-clear-btn" class="menu_button" disabled>
                 🗑️ 빌드 초기화
             </button>
         </div>
