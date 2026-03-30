@@ -10,19 +10,19 @@ try {
         import('../../../extensions.js'),
         import('../../../../script.js'),
     ]);
-    extension_settings = extMod.extension_settings;
-    eventSource = scriptMod.eventSource;
-    event_types = scriptMod.event_types;
-    saveSettingsDebounced = scriptMod.saveSettingsDebounced;
+    // [수정됨] 모듈에서 가져오지 못할 경우 window 전역 객체에서 강제로 가져오도록 || 연산자 추가
+    extension_settings = extMod.extension_settings || window.extension_settings || {};
+    eventSource = scriptMod.eventSource || window.eventSource;
+    event_types = scriptMod.event_types || window.event_types;
+    saveSettingsDebounced = scriptMod.saveSettingsDebounced || window.saveSettingsDebounced || (() => {});
 } catch {
-    extension_settings = window.extension_settings ?? {};
+    extension_settings = window.extension_settings || {};
     eventSource = window.eventSource;
     event_types = window.event_types;
-    saveSettingsDebounced = window.saveSettingsDebounced ?? (() => {});
+    saveSettingsDebounced = window.saveSettingsDebounced || (() => {});
 }
 
 import { injectPrompt, clearInjection } from './src/prompt-injector.js';
-// [수정됨] openPopupInNewWindow 임포트 제거
 import { openPopup, onChatChanged, clearCurrentBuild } from './src/ui-controller.js';
 import { getExtensionRoot } from './src/data-loader.js';
 
@@ -33,6 +33,11 @@ const DEFAULT_SETTINGS = {
 };
 
 function initSettings() {
+    // [추가된 방어 코드] 만약 환경 문제로 여전히 undefined라면 빈 객체로 초기화
+    if (!extension_settings) {
+        extension_settings = {};
+    }
+    
     if (!extension_settings[EXTENSION_NAME]) {
         extension_settings[EXTENSION_NAME] = { ...DEFAULT_SETTINGS };
     }
@@ -64,8 +69,6 @@ function bindSettingsEvents() {
         }
     });
 
-    // [수정됨] 새 창으로 열기 버튼 이벤트 바인딩 삭제
-
     // 빌드 초기화 버튼
     $(document).on('click', '#style-engine-clear-btn', function () {
         clearCurrentBuild();
@@ -84,13 +87,17 @@ function bindSettingsEvents() {
 }
 
 function registerEventListeners() {
-    eventSource.on(event_types.CHAT_CHANGED, () => {
-        onChatChanged();
-    });
+    if (eventSource && event_types) {
+        eventSource.on(event_types.CHAT_CHANGED, () => {
+            onChatChanged();
+        });
 
-    eventSource.on(event_types.GENERATION_STARTED, () => {
-        injectPrompt();
-    });
+        eventSource.on(event_types.GENERATION_STARTED, () => {
+            injectPrompt();
+        });
+    } else {
+        console.warn("[StyleEngine] eventSource를 찾을 수 없어 이벤트를 등록하지 못했습니다.");
+    }
 }
 
 async function init() {
