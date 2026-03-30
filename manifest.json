@@ -1,12 +1,12 @@
 {
-  "display_name": "Style Engine",
-  "loading_order": 1,
-  "requires": [],
-  "optional": [],
-  "js": "index.js",
-  "css": "style.css",
-  "author": "pointhuh-netizen",
-  "version": "0.1.0",
-  "homePage": "https://github.com/pointhuh-netizen/sillytavern-style-engine",
-  "auto_update": true
+    "display_name": "Style Engine — 문체 조합 빌더",
+    "loading_order": 100,
+    "requires": [],
+    "optional": [],
+    "js": "index.js",
+    "css": "style.css",
+    "author": "pointhuh-netizen",
+    "version": "1.1.0",
+    "homePage": "https://github.com/pointhuh-netizen/nov",
+    "auto_update": true
 }

@@ -1,313 +1,747 @@
-/* style.css — Style Engine extension stylesheet */
-/* Uses SillyTavern CSS variables for theme compatibility. */
+/* style.css — Style Engine 확장 UI 스타일 */
+/* SillyTavern의 CSS 변수 활용, 다크/라이트 모드 대응 */
 
+/* ============================================================
+   기본 변수 (ST CSS 변수 fallback)
+   ============================================================ */
 :root {
-    --sse-breakpoint-mobile: 500px;
+    --se-bg: var(--SmartThemeBlurTintColor, rgba(20, 20, 30, 0.97));
+    --se-bg-card: var(--SmartThemeBodyColor, rgba(30, 30, 45, 0.95));
+    --se-bg-hover: var(--SmartThemeSelectColor, rgba(60, 60, 90, 0.5));
+    --se-bg-selected: var(--SmartThemeSelectColor, rgba(80, 100, 180, 0.35));
+    --se-border: var(--SmartThemeBorderColor, rgba(120, 120, 160, 0.3));
+    --se-text: var(--SmartThemeBodyTextColor, #e8e8f0);
+    --se-text-muted: var(--SmartThemeEmColor, #9090a8);
+    --se-text-em: var(--SmartThemeEmColor, #b8b8d8);
+    --se-accent: var(--SmartThemeQuoteColor, #7c8cf8);
+    --se-error: #e05555;
+    --se-warning: #e0a040;
+    --se-info: #4a90c8;
+    --se-success: #48bb78;
+    --se-radius: 8px;
+    --se-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --se-transition: 0.15s ease;
 }
 
-/* ── Panel ──────────────────────────────────────────────────────────────── */
-
-.sse-panel {
-    padding: 10px;
-    color: var(--SmartThemeBodyColor, #ccc);
-    font-family: inherit;
-}
-
-.sse-header {
-    margin-bottom: 12px;
-}
-
-.sse-title {
-    margin: 0 0 4px;
-    font-size: 1.1em;
-    font-weight: bold;
-    color: var(--SmartThemeBodyColor, #ddd);
-}
-
-.sse-subtitle {
-    margin: 0;
-    font-size: 0.85em;
-    opacity: 0.7;
-}
-
-/* ── Loading / Error ────────────────────────────────────────────────────── */
-
-.sse-loading {
-    padding: 12px;
-    text-align: center;
-    font-style: italic;
-    opacity: 0.8;
-}
-
-.sse-error {
-    padding: 10px;
-    color: #f88;
-    background: rgba(255, 60, 60, 0.1);
-    border: 1px solid rgba(255, 60, 60, 0.4);
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-/* ── Sections ───────────────────────────────────────────────────────────── */
-
-.sse-section {
-    margin-bottom: 16px;
-    padding: 10px;
-    background: var(--SmartThemeChatBG, rgba(0,0,0,0.15));
-    border-radius: 6px;
-    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
-}
-
-.sse-section-header {
-    margin: 0 0 10px;
-    font-size: 0.95em;
-    font-weight: bold;
-    opacity: 0.9;
-}
-
-/* ── Config selector ────────────────────────────────────────────────────── */
-
-.sse-config-section {
-    margin-bottom: 10px;
-}
-
-.sse-section-title {
-    font-size: 0.9em;
-    font-weight: bold;
-    margin: 0 0 6px;
-    opacity: 0.85;
-}
-
-.sse-select {
-    width: 100%;
-    padding: 5px 8px;
-    background: var(--SmartThemeBlurTintColor, rgba(0,0,0,0.3));
-    color: var(--SmartThemeBodyColor, #ccc);
-    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.15));
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-/* ── Axis selector ──────────────────────────────────────────────────────── */
-
-.sse-axis-section {
-    margin-bottom: 14px;
-    padding: 8px;
-    border-radius: 4px;
-    border-left: 3px solid var(--SmartThemeQuoteColor, #7ab8e8);
-    background: rgba(255,255,255,0.03);
-}
-
-.sse-axis-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 220px;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-
-.sse-option-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    cursor: pointer;
-    font-size: 0.88em;
-    padding: 3px 4px;
-    border-radius: 3px;
-    line-height: 1.4;
-    transition: background 0.15s;
-}
-
-.sse-option-label:hover {
-    background: rgba(255,255,255,0.06);
-}
-
-.sse-option-label input {
-    margin-top: 2px;
-    flex-shrink: 0;
-    accent-color: var(--SmartThemeQuoteColor, #7ab8e8);
-}
-
-/* ── Conflict warnings ──────────────────────────────────────────────────── */
-
-.sse-conflict-warnings {
-    margin: 10px 0;
-    padding: 10px;
-    background: rgba(255, 200, 0, 0.08);
-    border: 1px solid rgba(255, 200, 0, 0.4);
-    border-radius: 4px;
-}
-
-.sse-conflict-item {
-    font-size: 0.88em;
-    color: #ffd;
-    margin-bottom: 4px;
-    line-height: 1.4;
-}
-
-/* ── Actions ────────────────────────────────────────────────────────────── */
-
-.sse-actions {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-}
-
-.sse-btn-preview {
-    background: var(--SmartThemeQuoteColor, #7ab8e8) !important;
-    color: #000 !important;
-}
-
-/* ── Preset section ─────────────────────────────────────────────────────── */
-
-.sse-presets-section {
-    font-size: 0.9em;
-}
-
-.sse-preset-controls {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
-    align-items: center;
-}
-
-.sse-input {
-    flex: 1;
-    padding: 5px 8px;
-    background: var(--SmartThemeBlurTintColor, rgba(0,0,0,0.3));
-    color: var(--SmartThemeBodyColor, #ccc);
-    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.15));
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-/* ── Preview popup ──────────────────────────────────────────────────────── */
-
-.sse-popup-overlay {
+/* ============================================================
+   팝업 컨테이너
+   ============================================================ */
+#style-engine-popup {
     position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-.sse-popup {
-    background: var(--SmartThemeChatBG, #1e1e1e);
-    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.2));
-    border-radius: 8px;
-    width: 100%;
-    max-width: 720px;
+    top: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    max-width: 1100px;
     max-height: 90vh;
+    background: var(--se-bg);
+    border: 1px solid var(--se-border);
+    border-radius: var(--se-radius);
+    box-shadow: var(--se-shadow);
+    z-index: 9999;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    color: var(--se-text);
+    font-family: inherit;
+    overflow: hidden;
 }
 
-.sse-popup-header {
+/* ============================================================
+   팝업 헤더
+   ============================================================ */
+.se-popup-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
+    padding: 10px 16px;
+    background: var(--se-bg-card);
+    border-bottom: 1px solid var(--se-border);
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
 }
 
-.sse-popup-header h3 {
-    margin: 0;
-    font-size: 1em;
-    color: var(--SmartThemeBodyColor, #ddd);
+.se-popup-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--se-text);
 }
 
-.sse-popup-close {
+.se-popup-close {
     background: none;
     border: none;
-    color: var(--SmartThemeBodyColor, #ccc);
-    font-size: 1.2em;
+    color: var(--se-text-muted);
+    font-size: 1.1rem;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 2px 8px;
     border-radius: 4px;
-    line-height: 1;
+    transition: color var(--se-transition), background var(--se-transition);
 }
 
-.sse-popup-close:hover {
-    background: rgba(255,255,255,0.1);
+.se-popup-close:hover {
+    color: var(--se-error);
+    background: rgba(224, 85, 85, 0.1);
 }
 
-.sse-popup-body {
+/* ============================================================
+   팝업 바디
+   ============================================================ */
+.se-popup-body {
+    display: flex;
     flex: 1;
     overflow: hidden;
-    padding: 12px 16px;
+    min-height: 0;
+}
+
+/* 왼쪽 패널 */
+.se-popup-left {
+    width: 60%;
     display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--se-border);
+    overflow: hidden;
 }
 
-.sse-preview-textarea {
-    width: 100%;
-    min-height: 300px;
-    resize: vertical;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.85em;
-    line-height: 1.5;
+/* 오른쪽 패널 */
+.se-popup-right {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+    overflow-y: auto;
+}
+
+/* ============================================================
+   탭 바
+   ============================================================ */
+.se-tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 8px 8px 0;
+    background: var(--se-bg-card);
+    border-bottom: 1px solid var(--se-border);
+    flex-shrink: 0;
+}
+
+.se-tab-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-bottom: none;
+    padding: 6px 10px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    color: var(--se-text-muted);
+    font-size: 0.82rem;
+    transition: all var(--se-transition);
+    white-space: nowrap;
+}
+
+.se-tab-btn:hover {
+    color: var(--se-text);
+    background: var(--se-bg-hover);
+}
+
+.se-tab-btn.active {
+    color: var(--se-accent);
+    border-color: var(--se-border);
+    border-bottom-color: var(--se-bg);
+    background: var(--se-bg);
+    font-weight: 600;
+}
+
+.se-tab-en {
+    font-size: 0.75rem;
+    color: var(--se-text-muted);
+}
+
+/* ============================================================
+   탭 컨텐츠
+   ============================================================ */
+.se-tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+/* 축 헤더 */
+.se-axis-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
     padding: 10px;
-    background: var(--SmartThemeBlurTintColor, rgba(0,0,0,0.4));
-    color: var(--SmartThemeBodyColor, #ddd);
-    border: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
-    border-radius: 4px;
-    box-sizing: border-box;
+    background: var(--se-bg-card);
+    border-radius: var(--se-radius);
+    border: 1px solid var(--se-border);
 }
 
-.sse-popup-footer {
+.se-axis-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.se-axis-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.se-axis-en {
+    font-size: 0.82rem;
+    color: var(--se-text-muted);
+}
+
+.se-axis-desc {
+    font-size: 0.8rem;
+    color: var(--se-text-muted);
+    margin-top: 3px;
+}
+
+.se-axis-type {
+    font-size: 0.78rem;
+    color: var(--se-accent);
+    margin-top: 4px;
+}
+
+/* ============================================================
+   모듈 그리드
+   ============================================================ */
+.se-module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+}
+
+.se-module-card {
+    border: 1px solid var(--se-border);
+    border-radius: var(--se-radius);
+    background: var(--se-bg-card);
+    transition: all var(--se-transition);
+    cursor: pointer;
+}
+
+.se-module-card:hover {
+    border-color: var(--se-accent);
+    background: var(--se-bg-hover);
+}
+
+.se-module-card.selected {
+    border-color: var(--se-accent);
+    background: var(--se-bg-selected);
+    box-shadow: 0 0 0 1px var(--se-accent);
+}
+
+.se-module-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.se-module-input {
+    margin-top: 3px;
+    flex-shrink: 0;
+    accent-color: var(--se-accent);
+}
+
+.se-module-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.se-module-id {
+    font-size: 0.75rem;
+    color: var(--se-text-muted);
+    font-family: monospace;
+}
+
+.se-module-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--se-text);
+    margin: 2px 0;
+}
+
+.se-module-oneliner {
+    font-size: 0.78rem;
+    color: var(--se-text-muted);
+    line-height: 1.4;
+}
+
+/* ============================================================
+   Config 섹션
+   ============================================================ */
+.se-config-wrapper {
+    border-top: 1px solid var(--se-border);
+    padding: 12px;
+    flex-shrink: 0;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.se-config-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--se-text-em);
+    margin-bottom: 8px;
+}
+
+.se-config-block {
+    margin-bottom: 12px;
+}
+
+.se-config-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--se-text);
+    margin-bottom: 6px;
+}
+
+.se-config-en {
+    font-size: 0.75rem;
+    color: var(--se-text-muted);
+}
+
+.se-config-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.se-config-mode {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid var(--se-border);
+    border-radius: 20px;
+    background: var(--se-bg-card);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all var(--se-transition);
+}
+
+.se-config-mode:hover {
+    border-color: var(--se-accent);
+    background: var(--se-bg-hover);
+}
+
+.se-config-mode.selected {
+    border-color: var(--se-accent);
+    background: var(--se-bg-selected);
+}
+
+.se-config-mode input[type="radio"] {
+    accent-color: var(--se-accent);
+}
+
+.se-config-mode-id {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--se-text-muted);
+}
+
+.se-config-mode-name {
+    font-weight: 600;
+}
+
+.se-config-mode-oneliner {
+    color: var(--se-text-muted);
+    font-size: 0.75rem;
+}
+
+/* ============================================================
+   오른쪽 패널 — 정보 패널
+   ============================================================ */
+.se-panel {
+    background: var(--se-bg-card);
+    border: 1px solid var(--se-border);
+    border-radius: var(--se-radius);
+    padding: 10px 12px;
+}
+
+.se-panel-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--se-text-em);
+    margin-bottom: 6px;
+}
+
+.se-current-build {
+    font-size: 0.8rem;
+    color: var(--se-text);
+    word-break: break-all;
+}
+
+.se-muted {
+    color: var(--se-text-muted);
+}
+
+/* ============================================================
+   충돌 검사
+   ============================================================ */
+.se-conflicts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.se-no-conflict {
+    font-size: 0.8rem;
+    color: var(--se-success);
+}
+
+.se-conflict-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+}
+
+.se-conflict-error {
+    background: rgba(224, 85, 85, 0.12);
+    border: 1px solid rgba(224, 85, 85, 0.3);
+}
+
+.se-conflict-warning {
+    background: rgba(224, 160, 64, 0.12);
+    border: 1px solid rgba(224, 160, 64, 0.3);
+}
+
+.se-conflict-info {
+    background: rgba(74, 144, 200, 0.1);
+    border: 1px solid rgba(74, 144, 200, 0.25);
+}
+
+.se-conflict-icon {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.se-conflict-msg {
+    color: var(--se-text);
+    line-height: 1.4;
+}
+
+.se-conflict-res {
+    color: var(--se-text-muted);
+    margin-top: 2px;
+    font-style: italic;
+}
+
+.se-conflict-modules {
+    margin-top: 3px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--se-text-muted);
+}
+
+/* ============================================================
+   빌드 경고
+   ============================================================ */
+.se-build-warnings {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.se-warning-item {
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    background: rgba(224, 160, 64, 0.1);
+    border: 1px solid rgba(224, 160, 64, 0.25);
+    border-radius: 4px;
+    color: var(--se-warning);
+}
+
+/* ============================================================
+   미리보기
+   ============================================================ */
+.se-preview-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.se-preview-content {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--se-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--se-bg);
+    border: 1px solid var(--se-border);
+    border-radius: 4px;
+    padding: 8px;
+    margin: 0;
+    max-height: 300px;
+}
+
+/* ============================================================
+   버튼
+   ============================================================ */
+.se-popup-actions {
     display: flex;
     gap: 8px;
-    padding: 12px 16px;
-    border-top: 1px solid var(--SmartThemeBorderColor, rgba(255,255,255,0.1));
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
-.sse-btn-copy {
-    background: rgba(255,255,255,0.1) !important;
+.se-btn {
+    padding: 7px 14px;
+    border: 1px solid var(--se-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all var(--se-transition);
+    background: var(--se-bg-card);
+    color: var(--se-text);
+    flex: 1;
+    min-width: 0;
+    text-align: center;
 }
 
-.sse-btn-apply {
-    background: var(--SmartThemeQuoteColor, #7ab8e8) !important;
-    color: #000 !important;
+.se-btn:hover:not(:disabled) {
+    background: var(--se-bg-hover);
+    border-color: var(--se-accent);
 }
 
-/* ── Scrollbar styling ──────────────────────────────────────────────────── */
-
-.sse-axis-controls::-webkit-scrollbar {
-    width: 5px;
+.se-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
-.sse-axis-controls::-webkit-scrollbar-track {
+.se-btn-primary {
+    background: var(--se-accent);
+    color: #fff;
+    border-color: var(--se-accent);
+}
+
+.se-btn-primary:hover:not(:disabled) {
+    opacity: 0.85;
+    background: var(--se-accent);
+}
+
+.se-btn-success {
+    background: var(--se-success);
+    color: #fff;
+    border-color: var(--se-success);
+}
+
+.se-btn-success:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.se-btn-danger {
+    color: var(--se-error);
+    border-color: rgba(224, 85, 85, 0.3);
+}
+
+.se-btn-danger:hover:not(:disabled) {
+    background: rgba(224, 85, 85, 0.1);
+    border-color: var(--se-error);
+}
+
+.se-btn-secondary {
+    color: var(--se-text-muted);
+}
+
+/* ============================================================
+   Settings 패널
+   ============================================================ */
+.se-settings-panel {
+    background: var(--se-bg-card, rgba(30, 30, 45, 0.95));
+    border: 1px solid var(--se-border, rgba(120, 120, 160, 0.3));
+    border-radius: var(--se-radius, 8px);
+    padding: 12px 14px;
+    margin: 8px 0;
+}
+
+.se-settings-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.se-settings-icon {
+    font-size: 1.1rem;
+}
+
+.se-settings-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--se-text, #e8e8f0);
+}
+
+.se-settings-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.se-settings-label {
+    font-size: 0.78rem;
+    color: var(--se-text-muted, #9090a8);
+    margin-bottom: 4px;
+}
+
+.se-settings-build-summary {
+    font-size: 0.82rem;
+    color: var(--se-text, #e8e8f0);
+    padding: 6px 8px;
+    background: var(--se-bg, rgba(20, 20, 30, 0.97));
+    border: 1px solid var(--se-border, rgba(120, 120, 160, 0.3));
+    border-radius: 4px;
+    word-break: break-all;
+}
+
+.se-settings-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   토글 스위치
+   ============================================================ */
+.se-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    margin-left: auto;
+    user-select: none;
+}
+
+.se-toggle-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.se-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    background: rgba(120, 120, 160, 0.3);
+    border-radius: 10px;
+    transition: background var(--se-transition);
+    flex-shrink: 0;
+}
+
+.se-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--se-text-muted, #9090a8);
+    border-radius: 50%;
+    transition: left var(--se-transition), background var(--se-transition);
+}
+
+.se-toggle-label input:checked ~ .se-toggle-switch {
+    background: var(--se-accent, #7c8cf8);
+}
+
+.se-toggle-label input:checked ~ .se-toggle-switch::after {
+    left: 18px;
+    background: #fff;
+}
+
+.se-toggle-text {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--se-text-muted, #9090a8);
+    min-width: 22px;
+}
+
+.se-toggle-label input:checked ~ .se-toggle-text {
+    color: var(--se-accent, #7c8cf8);
+}
+
+/* ============================================================
+   에러 표시
+   ============================================================ */
+.se-error {
+    color: var(--se-error);
+    font-size: 0.85rem;
+    padding: 8px;
+}
+
+/* ============================================================
+   스크롤바 스타일 (Webkit)
+   ============================================================ */
+.se-tab-content::-webkit-scrollbar,
+.se-popup-right::-webkit-scrollbar,
+.se-conflicts::-webkit-scrollbar,
+.se-preview-content::-webkit-scrollbar,
+.se-config-wrapper::-webkit-scrollbar {
+    width: 4px;
+}
+
+.se-tab-content::-webkit-scrollbar-track,
+.se-popup-right::-webkit-scrollbar-track,
+.se-conflicts::-webkit-scrollbar-track,
+.se-preview-content::-webkit-scrollbar-track,
+.se-config-wrapper::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.sse-axis-controls::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.15);
-    border-radius: 3px;
+.se-tab-content::-webkit-scrollbar-thumb,
+.se-popup-right::-webkit-scrollbar-thumb,
+.se-conflicts::-webkit-scrollbar-thumb,
+.se-preview-content::-webkit-scrollbar-thumb,
+.se-config-wrapper::-webkit-scrollbar-thumb {
+    background: var(--se-border);
+    border-radius: 2px;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────── */
-
-/* Note: CSS custom properties cannot be used in @media conditions.
-   --sse-breakpoint-mobile (500px) is defined in :root for reference only. */
-@media (max-width: 500px) {
-    .sse-popup {
-        max-height: 100vh;
-        border-radius: 0;
+/* ============================================================
+   반응형
+   ============================================================ */
+@media (max-width: 700px) {
+    #style-engine-popup {
+        width: 98vw;
+        max-height: 95vh;
+        top: 2vh;
     }
 
-    .sse-preset-controls {
+    .se-popup-body {
         flex-direction: column;
     }
 
-    .sse-preset-controls .sse-input,
-    .sse-preset-controls .sse-select {
+    .se-popup-left,
+    .se-popup-right {
         width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--se-border);
+    }
+
+    .se-popup-left {
+        max-height: 50vh;
+    }
+
+    .se-popup-right {
+        max-height: 45vh;
+    }
+
+    .se-module-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 }

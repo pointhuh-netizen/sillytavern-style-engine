@@ -1,51 +1,29 @@
-<!-- settings.html — Style Engine extension settings panel -->
-<div id="sse-settings-panel" class="sse-panel">
-    <div class="sse-header">
-        <h3 class="sse-title">✍️ Style Engine</h3>
-        <p class="sse-subtitle">모듈형 프롬프트 스타일 빌더</p>
+<!-- settings.html — ST 확장 설정 패널 삽입 HTML -->
+<div id="style-engine-settings" class="se-settings-panel">
+    <div class="se-settings-header">
+        <span class="se-settings-icon">✍️</span>
+        <span class="se-settings-title">Style Engine — 문체 조합 빌더</span>
+        <label class="se-toggle-label" title="프롬프트 주입 활성화/비활성화">
+            <input type="checkbox" id="style-engine-enabled-toggle" checked />
+            <span class="se-toggle-switch"></span>
+            <span class="se-toggle-text">ON</span>
+        </label>
     </div>
-
-    <!-- Loading / error states -->
-    <div id="sse-loading" class="sse-loading" style="display:none;">
-        <span class="sse-spinner">⏳</span> 데이터 로드 중…
-    </div>
-    <div id="sse-error" class="sse-error" style="display:none;"></div>
-
-    <!-- Main content -->
-    <div id="sse-content" style="display:none;">
-
-        <!-- Config selectors -->
-        <section class="sse-section">
-            <h3 class="sse-section-header">⚙️ 전역 설정</h3>
-            <div id="sse-config-selectors"></div>
-        </section>
-
-        <!-- Axis selectors -->
-        <section class="sse-section">
-            <h3 class="sse-section-header">🎛️ 축 모듈 선택</h3>
-            <div id="sse-axis-selectors"></div>
-        </section>
-
-        <!-- Conflict warnings -->
-        <div id="sse-conflict-warnings" class="sse-conflict-warnings" style="display:none;"></div>
-
-        <!-- Actions -->
-        <div class="sse-actions">
-            <button id="sse-preview-btn" class="menu_button sse-btn-preview">🔍 프리뷰</button>
+    <div class="se-settings-body">
+        <div class="se-settings-current">
+            <div class="se-settings-label">현재 적용된 빌드</div>
+            <div id="style-engine-current-build" class="se-settings-build-summary">적용된 빌드 없음</div>
         </div>
-
-        <!-- Preset management -->
-        <section class="sse-section sse-presets-section">
-            <h3 class="sse-section-header">💾 프리셋</h3>
-            <div class="sse-preset-controls">
-                <input id="sse-preset-name" type="text" class="sse-input" placeholder="프리셋 이름" />
-                <button id="sse-save-preset-btn" class="menu_button">저장</button>
-            </div>
-            <div class="sse-preset-controls">
-                <select id="sse-preset-select" class="sse-select"></select>
-                <button id="sse-load-preset-btn" class="menu_button">불러오기</button>
-            </div>
-        </section>
-
+        <div class="se-settings-actions">
+            <button id="style-engine-open-btn" class="se-btn se-btn-primary">
+                ✍️ 문체 빌더 열기
+            </button>
+            <button id="style-engine-newwindow-btn" class="se-btn se-btn-secondary">
+                🪟 새 창으로 열기
+            </button>
+            <button id="style-engine-clear-btn" class="se-btn se-btn-secondary" disabled>
+                🗑️ 빌드 초기화
+            </button>
+        </div>
     </div>
 </div>

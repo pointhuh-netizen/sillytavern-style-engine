@@ -1,464 +1,543 @@
 /**
  * ui-controller.js
- * Manages the extension UI: rendering axis/config selectors, handling selection
- * changes, conflict display, preview, and preset management.
+ * 팝업 빌더 UI 로직.
+ * popup.html을 팝업으로 열고, 축별 탭/모듈 선택/빌드 미리보기를 제어한다.
  */
 
-import { loadCatalog, loadAxis, loadConfig } from './data-loader.js';
-import { buildPrompt } from './build-engine.js';
-import { detectConflicts } from './conflict-detector.js';
+import { loadAll, getExtensionRoot } from './data-loader.js';
+import { buildFromLoadedData } from './build-engine.js';
+import { checkCombinations } from './combination-checker.js';
+import { applyBuild, loadBuildFromChat, clearBuildFromChat } from './prompt-injector.js';
 
-/** SillyTavern extension name used for extension_settings key. */
-const EXT_NAME = 'style-engine';
+const EXTENSION_NAME = 'sillytavern-style-engine';
 
-/** Current selections state. */
-let _selections = {
-    configs: {},
-    axes: {},
+// 현재 로드된 데이터
+let _loadedData = null;
+
+// 현재 팝업 선택 상태
+let _state = {
+    selectedModules: [], // e.g. ['A-01', 'S-02']
+    selectedConfigs: [], // e.g. ['UCC-01', 'NSFW-02']
 };
 
-/** Cached catalog data. */
-let _catalog = null;
-
-/** SillyTavern's getContext — injected or polyfilled. */
-function getContext() {
-    return window.SillyTavern?.getContext?.() ?? {};
-}
+// 새 창 참조
+let _standaloneWindow = null;
 
 /**
- * Persist selections to extension_settings (SillyTavern) and localStorage.
+ * 데이터 초기화 (첫 팝업 열기 시 한 번만 실행)
  */
-function persistSelections() {
-    try {
-        const ctx = getContext();
-        if (ctx.extensionSettings) {
-            ctx.extensionSettings[EXT_NAME] = ctx.extensionSettings[EXT_NAME] ?? {};
-            ctx.extensionSettings[EXT_NAME].selections = _selections;
-            ctx.saveSettingsDebounced?.();
-        }
-    } catch (e) {
-        // SillyTavern API not available — silently ignore
-    }
-    try {
-        localStorage.setItem(`sse-selections`, JSON.stringify(_selections));
-    } catch (e) {
-        // ignore
+async function ensureDataLoaded() {
+    if (!_loadedData) {
+        _loadedData = await loadAll();
     }
 }
 
 /**
- * Load persisted selections from extension_settings or localStorage.
+ * 팝업 열기.
+ * settings.html의 버튼에 연결.
  */
-function loadPersistedSelections() {
-    try {
-        const ctx = getContext();
-        const saved = ctx.extensionSettings?.[EXT_NAME]?.selections;
-        if (saved) {
-            _selections = saved;
-            return;
-        }
-    } catch (e) {
-        // ignore
+export async function openPopup() {
+    await ensureDataLoaded();
+
+    // 기존 팝업이 있으면 제거
+    $('#style-engine-popup').remove();
+
+    // popup.html 로드
+    const root = await getExtensionRoot();
+    const popupHtml = await $.get(`/${root}/popup.html`);
+    $('body').append(popupHtml);
+
+    // 저장된 상태 복원
+    const saved = loadBuildFromChat();
+    if (saved) {
+        _state.selectedModules = saved.modules || [];
+        _state.selectedConfigs = saved.configs || [];
+    } else {
+        _state.selectedModules = [];
+        _state.selectedConfigs = [];
     }
-    try {
-        const raw = localStorage.getItem('sse-selections');
-        if (raw) _selections = JSON.parse(raw);
-    } catch (e) {
-        // ignore
+
+    // UI 렌더링
+    renderPopup();
+    bindPopupEvents();
+
+    // 팝업 표시
+    $('#style-engine-popup').show();
+    // 드래그 가능하게
+    if ($.fn.draggable) {
+        $('#style-engine-popup').draggable({ handle: '.se-popup-header' });
     }
 }
 
 /**
- * Render a config selector (mutex mode list).
- *
- * @param {Object} cfgMeta  Catalog config entry.
- * @param {HTMLElement} container
+ * 팝업 UI 전체 렌더링.
  */
-async function renderConfigSelector(cfgMeta, container) {
-    let configData;
-    try {
-        configData = await loadConfig(cfgMeta.file.replace(/^configs\//, ''));
-    } catch (e) {
-        container.innerHTML += `<p class="sse-error">⚠️ ${cfgMeta.name_ko} 로드 실패</p>`;
+function renderPopup() {
+    const catalog = _loadedData.catalog;
+    const $popup = $('#style-engine-popup');
+
+    // 탭 렌더링 (축 + config)
+    renderAxisTabs($popup, catalog);
+
+    // 기본 첫 번째 탭 활성화
+    const firstTab = $popup.find('.se-tab-btn').first();
+    if (firstTab.length) {
+        activateTab(firstTab.data('axis'));
+    }
+
+    // config 섹션 렌더링
+    renderConfigSection($popup, catalog);
+
+    // 충돌 검사 초기 실행
+    updateConflictDisplay();
+
+    // 현재 적용된 빌드 요약 표시
+    updateBuildSummary();
+}
+
+/**
+ * 축 탭 버튼 렌더링.
+ */
+function renderAxisTabs($popup, catalog) {
+    const $tabBar = $popup.find('.se-tab-bar');
+    $tabBar.empty();
+
+    for (const [axisKey, axisInfo] of Object.entries(catalog.axes)) {
+        const $btn = $(`
+            <button class="se-tab-btn" data-axis="${axisKey}">
+                ${axisInfo.icon || ''} ${axisInfo.name_ko}
+                <span class="se-tab-en">(${axisInfo.name_en})</span>
+            </button>
+        `);
+        $tabBar.append($btn);
+    }
+}
+
+/**
+ * 탭 활성화 + 해당 축 모듈 렌더링.
+ */
+function activateTab(axisKey) {
+    const $popup = $('#style-engine-popup');
+    $popup.find('.se-tab-btn').removeClass('active');
+    $popup.find(`.se-tab-btn[data-axis="${axisKey}"]`).addClass('active');
+
+    const catalog = _loadedData.catalog;
+    const axisData = _loadedData.axes[axisKey];
+    const axisInfo = catalog.axes[axisKey];
+
+    const $content = $popup.find('.se-tab-content');
+    $content.empty();
+
+    if (!axisData || !axisInfo) {
+        $content.html('<p class="se-error">축 데이터를 불러올 수 없습니다.</p>');
         return;
     }
 
-    const section = document.createElement('div');
-    section.className = 'sse-config-section';
-    section.innerHTML = `<h4 class="sse-section-title">${cfgMeta.icon ?? ''} ${cfgMeta.name_ko}</h4>`;
+    // 축 설명
+    $content.append(`
+        <div class="se-axis-header">
+            <span class="se-axis-icon">${axisInfo.icon || ''}</span>
+            <div>
+                <div class="se-axis-title">${axisInfo.name_ko} <span class="se-axis-en">(${axisInfo.name_en})</span></div>
+                <div class="se-axis-desc">${axisInfo.ui_description || ''}</div>
+                <div class="se-axis-type">${axisInfo.type === 'mutex' ? '⊙ 하나만 선택' : '☑ 복수 선택 가능'}</div>
+            </div>
+        </div>
+    `);
 
-    const select = document.createElement('select');
-    select.className = 'sse-select';
-    select.dataset.configId = cfgMeta.id;
-
-    // "선택 안 함" option
-    const noneOpt = document.createElement('option');
-    noneOpt.value = '';
-    noneOpt.textContent = '— 선택 안 함 —';
-    select.appendChild(noneOpt);
-
-    for (const mode of configData.modes ?? []) {
-        const opt = document.createElement('option');
-        opt.value = mode.id;
-        opt.textContent = `${mode.id} ${mode.name ?? ''}`;
-        opt.title = mode.one_liner ?? '';
-        if ((_selections.configs[cfgMeta.id] ?? '') === mode.id) {
-            opt.selected = true;
-        }
-        select.appendChild(opt);
+    // 모듈 카드 렌더링
+    const $grid = $('<div class="se-module-grid"></div>');
+    for (const mod of axisData.modules || []) {
+        const isSelected = _state.selectedModules.includes(mod.id);
+        const $card = renderModuleCard(mod, axisKey, axisInfo.type, isSelected);
+        $grid.append($card);
     }
+    $content.append($grid);
+}
 
-    select.addEventListener('change', () => {
-        _selections.configs[cfgMeta.id] = select.value || undefined;
-        onSelectionChange();
+/**
+ * 개별 모듈 카드 렌더링.
+ */
+function renderModuleCard(mod, axisKey, axisType, isSelected) {
+    const inputType = axisType === 'mutex' ? 'radio' : 'checkbox';
+    const $card = $(`
+        <div class="se-module-card ${isSelected ? 'selected' : ''}" data-module-id="${mod.id}" data-axis="${axisKey}">
+            <label class="se-module-label">
+                <input type="${inputType}" class="se-module-input"
+                    name="axis-${axisKey}"
+                    value="${mod.id}"
+                    ${isSelected ? 'checked' : ''}
+                    ${mod.id.endsWith('-00') && axisType === 'mutex' ? '' : ''}
+                />
+                <div class="se-module-info">
+                    <div class="se-module-id">${mod.id}</div>
+                    <div class="se-module-name">${mod.name}</div>
+                    <div class="se-module-oneliner">${mod.one_liner || ''}</div>
+                </div>
+            </label>
+        </div>
+    `);
+    return $card;
+}
+
+/**
+ * Config 섹션 렌더링.
+ */
+function renderConfigSection($popup, catalog) {
+    const $configSection = $popup.find('.se-config-section');
+    $configSection.empty();
+
+    for (const cfgMeta of catalog.configs) {
+        const cfgData = _loadedData.configs[cfgMeta.id];
+        if (!cfgData) continue;
+
+        const $cfgBlock = $(`
+            <div class="se-config-block">
+                <div class="se-config-title">${cfgMeta.icon || ''} ${cfgMeta.name_ko} <span class="se-config-en">(${cfgMeta.name_en})</span></div>
+            </div>
+        `);
+
+        const $modes = $('<div class="se-config-modes"></div>');
+        for (const mode of cfgData.modes || []) {
+            const isSelected = _state.selectedConfigs.includes(mode.id);
+            $modes.append(`
+                <label class="se-config-mode ${isSelected ? 'selected' : ''}">
+                    <input type="radio" name="config-${cfgMeta.id}" value="${mode.id}" ${isSelected ? 'checked' : ''} />
+                    <span class="se-config-mode-id">${mode.id}</span>
+                    <span class="se-config-mode-name">${mode.name || mode.id}</span>
+                    <span class="se-config-mode-oneliner">${mode.one_liner || ''}</span>
+                </label>
+            `);
+        }
+        $cfgBlock.append($modes);
+        $configSection.append($cfgBlock);
+    }
+}
+
+/**
+ * 이벤트 바인딩.
+ */
+function bindPopupEvents() {
+    const $popup = $('#style-engine-popup');
+
+    // 탭 클릭
+    $popup.on('click', '.se-tab-btn', function () {
+        activateTab($(this).data('axis'));
+        updateConflictDisplay();
     });
 
-    section.appendChild(select);
-    container.appendChild(section);
-}
+    // 모듈 선택 (축별 mutex/combinable)
+    $popup.on('change', '.se-module-input', function () {
+        const $input = $(this);
+        const moduleId = $input.val();
+        const axisKey = $input.closest('.se-module-card').data('axis');
+        const axisInfo = _loadedData.catalog.axes[axisKey];
+        const isMutex = axisInfo?.type === 'mutex';
 
-/**
- * Render an axis selector.
- * Mutex axes → radio buttons; combinable axes → checkboxes.
- *
- * @param {string} axisKey  e.g. "A"
- * @param {Object} axisMeta  Catalog axes entry.
- * @param {HTMLElement} container
- */
-async function renderAxisSelector(axisKey, axisMeta, container) {
-    // Derive axis file name
-    const axisModuleMeta = (_catalog.modules ?? []).find(m => m.axis === axisKey);
-    const rawFile = axisModuleMeta?.file ?? `axes/axis-${axisKey.toLowerCase()}.json`;
-    const axisFileName = rawFile.replace(/^axes\//, '');
-
-    let axisData;
-    try {
-        axisData = await loadAxis(axisFileName);
-    } catch (e) {
-        container.innerHTML += `<p class="sse-error">⚠️ ${axisMeta.name_ko}(${axisKey}) 로드 실패</p>`;
-        return;
-    }
-
-    const isMutex = axisMeta.type === 'mutex';
-    const section = document.createElement('div');
-    section.className = `sse-axis-section sse-axis-${axisKey.toLowerCase()}`;
-    section.dataset.axisKey = axisKey;
-
-    const header = document.createElement('h4');
-    header.className = 'sse-section-title';
-    header.textContent = `${axisMeta.icon ?? ''} ${axisMeta.name_ko} (${axisKey})`;
-    if (axisMeta.ui_description) {
-        header.title = axisMeta.ui_description;
-    }
-    section.appendChild(header);
-
-    const controlsDiv = document.createElement('div');
-    controlsDiv.className = 'sse-axis-controls';
-    const inputType = isMutex ? 'radio' : 'checkbox';
-    const groupName = `sse-axis-${axisKey}`;
-
-    // "없음" option for mutex axes
-    if (isMutex) {
-        const label = _buildInputLabel(inputType, groupName, `${axisKey}-none`, '— 없음 —', '',
-            !_selections.axes[axisKey]);
-        controlsDiv.appendChild(label);
-    }
-
-    for (const mod of axisData.modules ?? []) {
-        const isChecked = isMutex
-            ? _selections.axes[axisKey] === mod.id
-            : (Array.isArray(_selections.axes[axisKey]) && _selections.axes[axisKey].includes(mod.id));
-
-        const labelEl = _buildInputLabel(inputType, groupName, mod.id,
-            `${mod.id} ${mod.name ?? ''}`, mod.one_liner ?? '', isChecked);
-        controlsDiv.appendChild(labelEl);
-    }
-
-    controlsDiv.addEventListener('change', () => {
         if (isMutex) {
-            const checked = controlsDiv.querySelector(`input[name="${groupName}"]:checked`);
-            const val = checked?.value;
-            _selections.axes[axisKey] = (val && val !== `${axisKey}-none`) ? val : undefined;
+            // mutex: 같은 축의 기존 선택 제거 후 새 선택 추가
+            _state.selectedModules = _state.selectedModules.filter(
+                (id) => !id.startsWith(`${axisKey}-`)
+            );
+            if ($input.is(':checked')) {
+                _state.selectedModules.push(moduleId);
+            }
         } else {
-            const checked = [...controlsDiv.querySelectorAll(`input[name="${groupName}"]:checked`)];
-            _selections.axes[axisKey] = checked.map(el => el.value).filter(Boolean);
-        }
-        onSelectionChange();
-    });
-
-    section.appendChild(controlsDiv);
-    container.appendChild(section);
-}
-
-/**
- * Build an <label><input ...> text</label> element.
- */
-function _buildInputLabel(type, name, value, text, titleText, checked) {
-    const label = document.createElement('label');
-    label.className = 'sse-option-label';
-    label.title = titleText;
-
-    const input = document.createElement('input');
-    input.type = type;
-    input.name = name;
-    input.value = value;
-    input.checked = !!checked;
-
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(' ' + text));
-    return label;
-}
-
-/**
- * Called whenever a selection changes.
- * Runs conflict detection and updates the conflict warning area.
- */
-async function onSelectionChange() {
-    persistSelections();
-
-    const warningEl = document.getElementById('sse-conflict-warnings');
-    if (!warningEl) return;
-
-    try {
-        const { conflicts, warnings } = await detectConflicts(_selections);
-        const allIssues = [...conflicts, ...warnings];
-        if (allIssues.length === 0) {
-            warningEl.innerHTML = '';
-            warningEl.style.display = 'none';
-        } else {
-            warningEl.style.display = 'block';
-            warningEl.innerHTML = allIssues.map(issue => {
-                const modules = (issue.modules ?? []).map(m => m.id ?? m).join(', ');
-                return `<div class="sse-conflict-item">⚠️ ${issue.description ?? issue.trait}: ${modules}</div>`;
-            }).join('');
-        }
-    } catch (e) {
-        console.warn('[StyleEngine] Conflict detection failed:', e);
-    }
-}
-
-/**
- * Show a preview of the built prompt in the popup.
- */
-export async function showPreview() {
-    const popup = document.getElementById('sse-preview-popup');
-    const textarea = document.getElementById('sse-preview-text');
-    if (!popup || !textarea) return;
-
-    textarea.value = '빌드 중…';
-    popup.style.display = 'flex';
-
-    try {
-        const prompt = await buildPrompt(_selections);
-        textarea.value = prompt;
-    } catch (e) {
-        textarea.value = `오류: ${e.message}`;
-    }
-}
-
-/**
- * Apply the built prompt to SillyTavern's system prompt.
- */
-export async function applyToChat() {
-    try {
-        const prompt = await buildPrompt(_selections);
-        const ctx = getContext();
-
-        if (ctx.setExtensionPrompt) {
-            ctx.setExtensionPrompt(EXT_NAME, prompt, 1, 0);
-            toastr?.success?.('스타일 엔진 프롬프트가 적용되었습니다.');
-        } else if (ctx.extensionSettings) {
-            // Fallback: store in extension settings for manual use
-            ctx.extensionSettings[EXT_NAME] = ctx.extensionSettings[EXT_NAME] ?? {};
-            ctx.extensionSettings[EXT_NAME].lastPrompt = prompt;
-            ctx.saveSettingsDebounced?.();
-            toastr?.info?.('프롬프트가 저장되었습니다. SillyTavern API를 찾지 못해 직접 적용이 불가합니다.');
-        } else {
-            toastr?.warning?.('SillyTavern 컨텍스트를 찾을 수 없습니다.');
-        }
-    } catch (e) {
-        toastr?.error?.(`적용 실패: ${e.message}`);
-    }
-}
-
-/**
- * Save current selections as a named preset to localStorage.
- * @param {string} name
- */
-export function savePreset(name) {
-    if (!name) return;
-    try {
-        const presets = _loadPresetMap();
-        presets[name] = JSON.parse(JSON.stringify(_selections));
-        localStorage.setItem('sse-presets', JSON.stringify(presets));
-        return true;
-    } catch (e) {
-        console.error('[StyleEngine] savePreset failed:', e);
-        return false;
-    }
-}
-
-/**
- * Load a named preset from localStorage and apply it.
- * @param {string} name
- */
-export function loadPreset(name) {
-    try {
-        const presets = _loadPresetMap();
-        if (presets[name]) {
-            _selections = presets[name];
-            persistSelections();
-            return true;
-        }
-    } catch (e) {
-        console.error('[StyleEngine] loadPreset failed:', e);
-    }
-    return false;
-}
-
-/** Return the map of saved presets from localStorage. */
-function _loadPresetMap() {
-    try {
-        const raw = localStorage.getItem('sse-presets');
-        return raw ? JSON.parse(raw) : {};
-    } catch (e) {
-        return {};
-    }
-}
-
-/** Return a list of saved preset names. */
-export function listPresets() {
-    return Object.keys(_loadPresetMap());
-}
-
-/**
- * Initialize the extension UI.
- * Should be called from index.js after DOM is ready.
- *
- * @param {HTMLElement} settingsRoot  The root element of settings.html content.
- */
-/**
- * Render config and axis selectors into the settings panel.
- * Clears existing content first so it is safe to call multiple times.
- * Requires _catalog to already be loaded.
- * @param {HTMLElement} settingsRoot
- */
-async function _renderSelectors(settingsRoot) {
-    const configContainer = settingsRoot.querySelector('#sse-config-selectors');
-    const axisContainer = settingsRoot.querySelector('#sse-axis-selectors');
-
-    // Render config selectors
-    if (configContainer) {
-        configContainer.innerHTML = '';
-        for (const cfgMeta of _catalog.configs ?? []) {
-            await renderConfigSelector(cfgMeta, configContainer);
-        }
-    }
-
-    // Render axis selectors
-    if (axisContainer) {
-        axisContainer.innerHTML = '';
-        for (const [axisKey, axisMeta] of Object.entries(_catalog.axes ?? {})) {
-            await renderAxisSelector(axisKey, axisMeta, axisContainer);
-        }
-    }
-}
-
-export async function init(settingsRoot) {
-    loadPersistedSelections();
-
-    const loadingEl = settingsRoot.querySelector('#sse-loading');
-    const errorEl = settingsRoot.querySelector('#sse-error');
-    const contentEl = settingsRoot.querySelector('#sse-content');
-
-    if (loadingEl) loadingEl.style.display = 'block';
-    if (contentEl) contentEl.style.display = 'none';
-
-    try {
-        _catalog = await loadCatalog();
-    } catch (e) {
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (errorEl) {
-            errorEl.textContent = `데이터 로드 실패: ${e.message}`;
-            errorEl.style.display = 'block';
-        }
-        return;
-    }
-
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (contentEl) contentEl.style.display = 'block';
-
-    await _renderSelectors(settingsRoot);
-
-    // Bind preset UI
-    const savePresetBtn = settingsRoot.querySelector('#sse-save-preset-btn');
-    const loadPresetBtn = settingsRoot.querySelector('#sse-load-preset-btn');
-    const presetNameInput = settingsRoot.querySelector('#sse-preset-name');
-    const presetSelect = settingsRoot.querySelector('#sse-preset-select');
-
-    function refreshPresetSelect() {
-        if (!presetSelect) return;
-        presetSelect.innerHTML = '';
-        const names = listPresets();
-        if (names.length === 0) {
-            presetSelect.innerHTML = '<option value="">— 저장된 프리셋 없음 —</option>';
-        } else {
-            for (const n of names) {
-                const opt = document.createElement('option');
-                opt.value = n;
-                opt.textContent = n;
-                presetSelect.appendChild(opt);
+            // combinable: 토글
+            if ($input.is(':checked')) {
+                if (!_state.selectedModules.includes(moduleId)) {
+                    _state.selectedModules.push(moduleId);
+                }
+            } else {
+                _state.selectedModules = _state.selectedModules.filter((id) => id !== moduleId);
             }
         }
+
+        // 카드 스타일 업데이트
+        $popup.find(`.se-module-card`).each(function () {
+            const id = $(this).data('module-id');
+            $(this).toggleClass('selected', _state.selectedModules.includes(id));
+        });
+
+        updateConflictDisplay();
+        updateBuildSummary();
+    });
+
+    // config 선택
+    $popup.on('change', 'input[type="radio"][name^="config-"]', function () {
+        const $input = $(this);
+        const cfgMetaId = $input.attr('name').replace('config-', '');
+        const cfgMeta = _loadedData.catalog.configs.find((c) => c.id === cfgMetaId);
+        if (!cfgMeta) return;
+
+        // 해당 config의 기존 선택 제거
+        const modeIds = cfgMeta.modes || [];
+        _state.selectedConfigs = _state.selectedConfigs.filter(
+            (id) => !modeIds.includes(id)
+        );
+        // 새 선택 추가
+        const newModeId = $input.val();
+        if (newModeId) {
+            _state.selectedConfigs.push(newModeId);
+        }
+
+        // 카드 스타일 업데이트
+        $popup.find('.se-config-mode').each(function () {
+            const modeVal = $(this).find('input').val();
+            $(this).toggleClass('selected', _state.selectedConfigs.includes(modeVal));
+        });
+
+        updateConflictDisplay();
+        updateBuildSummary();
+    });
+
+    // 빌드 버튼
+    $popup.on('click', '#se-btn-build', function () {
+        runBuild();
+    });
+
+    // 적용 버튼
+    $popup.on('click', '#se-btn-apply', function () {
+        runApply();
+    });
+
+    // 초기화 버튼
+    $popup.on('click', '#se-btn-reset', function () {
+        _state.selectedModules = [];
+        _state.selectedConfigs = [];
+        clearBuildFromChat();
+        const activeAxis = $popup.find('.se-tab-btn.active').data('axis');
+        if (activeAxis) activateTab(activeAxis);
+        renderConfigSection($popup, _loadedData.catalog);
+        updateConflictDisplay();
+        updateBuildSummary();
+        $popup.find('.se-preview-content').text('');
+    });
+
+    // 닫기 버튼
+    $popup.on('click', '#se-btn-close, .se-popup-close', function () {
+        $popup.hide();
+    });
+
+    // 외부 클릭 시 닫기
+    $(document).on('click.style-engine-outside', function (e) {
+        if ($popup.is(':visible') && !$(e.target).closest('#style-engine-popup').length) {
+            // 팝업 외부 클릭 — 닫지 않음 (의도적으로 유지)
+        }
+    });
+}
+
+/**
+ * 충돌 표시 업데이트.
+ */
+function updateConflictDisplay() {
+    const $popup = $('#style-engine-popup');
+    const $conflicts = $popup.find('.se-conflicts');
+    $conflicts.empty();
+
+    if (!_loadedData || _state.selectedModules.length < 2) {
+        $conflicts.html('<span class="se-no-conflict">선택된 모듈이 없거나 1개입니다.</span>');
+        return;
     }
-    refreshPresetSelect();
 
-    savePresetBtn?.addEventListener('click', () => {
-        const name = presetNameInput?.value?.trim();
-        if (!name) { toastr?.warning?.('프리셋 이름을 입력하세요.'); return; }
-        if (savePreset(name)) {
-            toastr?.success?.(`프리셋 "${name}" 저장 완료`);
-            refreshPresetSelect();
+    const results = checkCombinations({
+        selectedModules: _state.selectedModules,
+        selectedConfigs: _state.selectedConfigs,
+        allAxes: _loadedData.axes,
+        combinations: _loadedData.combinations,
+    });
+
+    if (!results.length) {
+        $conflicts.html('<span class="se-no-conflict">✓ 충돌 없음</span>');
+        return;
+    }
+
+    for (const r of results) {
+        const cls =
+            r.severity === 'error'
+                ? 'se-conflict-error'
+                : r.severity === 'warning'
+                ? 'se-conflict-warning'
+                : 'se-conflict-info';
+        const icon =
+            r.severity === 'error' ? '🔴' : r.severity === 'warning' ? '🟡' : 'ℹ️';
+        $conflicts.append(`
+            <div class="se-conflict-item ${cls}">
+                <span class="se-conflict-icon">${icon}</span>
+                <div>
+                    <div class="se-conflict-msg">${r.message}</div>
+                    ${r.resolution ? `<div class="se-conflict-res">${r.resolution}</div>` : ''}
+                    <div class="se-conflict-modules">${(r.modules || []).join(', ')}</div>
+                </div>
+            </div>
+        `);
+    }
+}
+
+/**
+ * 빌드 실행 및 미리보기 업데이트.
+ */
+function runBuild() {
+    if (!_loadedData) return;
+
+    const result = buildFromLoadedData(
+        _state.selectedModules,
+        _state.selectedConfigs,
+        _loadedData
+    );
+
+    const $popup = $('#style-engine-popup');
+    $popup.find('.se-preview-content').text(result.prompt);
+
+    if (result.warnings.length) {
+        $popup.find('.se-build-warnings').html(
+            result.warnings.map((w) => `<div class="se-warning-item">⚠️ ${w}</div>`).join('')
+        );
+    } else {
+        $popup.find('.se-build-warnings').empty();
+    }
+
+    // 적용 버튼 활성화
+    $popup.find('#se-btn-apply').prop('disabled', false);
+
+    // 임시로 결과 저장 (적용 전 미리보기용)
+    $popup.data('lastBuildResult', result);
+}
+
+/**
+ * 적용 버튼 클릭 시 채팅에 저장 + 주입.
+ */
+function runApply() {
+    const $popup = $('#style-engine-popup');
+    let result = $popup.data('lastBuildResult');
+
+    if (!result) {
+        // 빌드 없이 바로 적용 버튼 누른 경우
+        result = buildFromLoadedData(
+            _state.selectedModules,
+            _state.selectedConfigs,
+            _loadedData
+        );
+    }
+
+    applyBuild(result);
+    updateBuildSummary();
+
+    // 성공 피드백
+    const $applyBtn = $popup.find('#se-btn-apply');
+    const origText = $applyBtn.text();
+    $applyBtn.text('✓ 적용됨').addClass('se-btn-success');
+    setTimeout(() => {
+        $applyBtn.text(origText).removeClass('se-btn-success');
+    }, 2000);
+}
+
+/**
+ * 빌드 요약 텍스트 업데이트 (팝업 하단 + settings 패널).
+ */
+function updateBuildSummary() {
+    const saved = loadBuildFromChat();
+    const $popup = $('#style-engine-popup');
+
+    if (saved && saved.modules && saved.modules.length) {
+        const summary = `적용된 모듈: ${saved.modules.join(', ')}${saved.configs.length ? ' | 설정: ' + saved.configs.join(', ') : ''}`;
+        $popup.find('.se-current-build').text(summary);
+        // settings 패널도 업데이트
+        $('#style-engine-current-build').text(summary);
+        $('#style-engine-clear-btn').prop('disabled', false);
+    } else {
+        $popup.find('.se-current-build').text('적용된 빌드 없음');
+        $('#style-engine-current-build').text('적용된 빌드 없음');
+        $('#style-engine-clear-btn').prop('disabled', true);
+    }
+}
+
+/**
+ * settings 패널의 "빌드 초기화" 버튼 핸들러.
+ */
+export function clearCurrentBuild() {
+    clearBuildFromChat();
+    updateBuildSummary();
+}
+
+/**
+ * 채팅 전환 시 UI 상태 갱신.
+ */
+export function onChatChanged() {
+    const saved = loadBuildFromChat();
+    if (saved) {
+        _state.selectedModules = saved.modules || [];
+        _state.selectedConfigs = saved.configs || [];
+    } else {
+        _state.selectedModules = [];
+        _state.selectedConfigs = [];
+    }
+    updateBuildSummary();
+
+    // 팝업이 열려있으면 UI도 갱신
+    if ($('#style-engine-popup').is(':visible')) {
+        const activeAxis = $('#style-engine-popup').find('.se-tab-btn.active').data('axis');
+        if (activeAxis) activateTab(activeAxis);
+        renderConfigSection($('#style-engine-popup'), _loadedData?.catalog);
+        updateConflictDisplay();
+    }
+}
+
+/**
+ * standalone 창에서 온 postMessage 처리.
+ */
+function _handleStandaloneMessage(event) {
+    if (!event.data || event.data.source !== 'style-engine-standalone') return;
+    if (event.origin !== window.location.origin) return;
+
+    if (event.data.type === 'apply') {
+        applyBuild(event.data.result);
+        updateBuildSummary();
+    } else if (event.data.type === 'stateChange') {
+        _state.selectedModules = event.data.state.selectedModules || [];
+        _state.selectedConfigs = event.data.state.selectedConfigs || [];
+    }
+}
+
+/**
+ * popup-standalone.html을 새 브라우저 창으로 열기.
+ * 부모 창의 데이터를 window._styleEngineForStandalone으로 노출하고,
+ * 자식 창이 postMessage로 결과를 돌려보내면 부모에서 반영한다.
+ */
+export async function openPopupInNewWindow() {
+    await ensureDataLoaded();
+
+    // 이미 열려있으면 포커스
+    if (_standaloneWindow && !_standaloneWindow.closed) {
+        _standaloneWindow.focus();
+        return;
+    }
+
+    const root = await getExtensionRoot();
+    const url = `/${root}/popup-standalone.html`;
+
+    // 부모 창에 데이터/상태 노출 (자식 창이 window.opener로 접근)
+    window._styleEngineForStandalone = {
+        loadedData: _loadedData,
+        state: { ..._state },
+    };
+
+    _standaloneWindow = window.open(
+        url,
+        'style-engine-popup',
+        'width=1100,height=750,resizable=yes,scrollbars=yes'
+    );
+
+    if (!_standaloneWindow) {
+        if (typeof toastr !== 'undefined') {
+            toastr.warning('팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제해 주세요.', 'Style Engine');
+        } else {
+            console.warn('[StyleEngine] Popup window was blocked by the browser.');
         }
-    });
+        return;
+    }
 
-    loadPresetBtn?.addEventListener('click', () => {
-        const name = presetSelect?.value;
-        if (!name) { toastr?.warning?.('불러올 프리셋을 선택하세요.'); return; }
-        if (loadPreset(name)) {
-            // Re-render selectors to reflect loaded selections by clearing and re-initialising
-            const configContainer = settingsRoot.querySelector('#sse-config-selectors');
-            const axisContainer = settingsRoot.querySelector('#sse-axis-selectors');
-            if (configContainer) configContainer.innerHTML = '';
-            if (axisContainer) axisContainer.innerHTML = '';
-            _renderSelectors(settingsRoot).then(() => {
-                toastr?.success?.(`프리셋 "${name}" 로드 완료`);
-            });
-        }
-    });
-
-    // Bind preview button
-    const previewBtn = settingsRoot.querySelector('#sse-preview-btn');
-    previewBtn?.addEventListener('click', showPreview);
-
-    // Bind popup close / copy / apply buttons
-    const closePopupBtn = document.getElementById('sse-popup-close');
-    const copyBtn = document.getElementById('sse-copy-btn');
-    const applyBtn = document.getElementById('sse-apply-btn');
-
-    closePopupBtn?.addEventListener('click', () => {
-        const popup = document.getElementById('sse-preview-popup');
-        if (popup) popup.style.display = 'none';
-    });
-
-    copyBtn?.addEventListener('click', () => {
-        const textarea = document.getElementById('sse-preview-text');
-        if (textarea) {
-            navigator.clipboard.writeText(textarea.value).then(() => {
-                toastr?.success?.('클립보드에 복사되었습니다.');
-            });
-        }
-    });
-
-    applyBtn?.addEventListener('click', applyToChat);
+    // standalone 창에서 오는 메시지 수신 등록 (중복 방지)
+    window.removeEventListener('message', _handleStandaloneMessage);
+    window.addEventListener('message', _handleStandaloneMessage);
 }

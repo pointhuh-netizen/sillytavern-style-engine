@@ -1,17 +1,67 @@
-<!-- popup.html — Style Engine preview popup -->
-<div id="sse-preview-popup" class="sse-popup-overlay" style="display:none;">
-    <div class="sse-popup">
-        <div class="sse-popup-header">
-            <h3>✍️ 프롬프트 프리뷰</h3>
-            <button id="sse-popup-close" class="sse-popup-close" title="닫기">✕</button>
+<!-- popup.html — 문체 빌더 팝업 템플릿 -->
+<div id="style-engine-popup" class="se-popup" style="display:none;">
+    <!-- 팝업 헤더 (드래그 핸들) -->
+    <div class="se-popup-header">
+        <span class="se-popup-title">✍️ Style Engine — 문체 조합 빌더</span>
+        <button class="se-popup-close" title="닫기">✕</button>
+    </div>
+
+    <!-- 팝업 바디 -->
+    <div class="se-popup-body">
+        <!-- 왼쪽: 축 선택 영역 -->
+        <div class="se-popup-left">
+            <!-- 축 탭 바 -->
+            <div class="se-tab-bar"></div>
+            <!-- 축 탭 컨텐츠 -->
+            <div class="se-tab-content"></div>
+
+            <!-- Config 선택 섹션 -->
+            <div class="se-config-wrapper">
+                <div class="se-config-header">⚙️ 설정 (Config)</div>
+                <div class="se-config-section"></div>
+            </div>
         </div>
-        <div class="sse-popup-body">
-            <textarea id="sse-preview-text" class="sse-preview-textarea" readonly
-                placeholder="여기에 빌드된 프롬프트가 표시됩니다…"></textarea>
-        </div>
-        <div class="sse-popup-footer">
-            <button id="sse-copy-btn" class="menu_button sse-btn-copy">📋 복사</button>
-            <button id="sse-apply-btn" class="menu_button sse-btn-apply">✅ 채팅에 적용</button>
+
+        <!-- 오른쪽: 검증/빌드/미리보기 영역 -->
+        <div class="se-popup-right">
+            <!-- 현재 선택 요약 -->
+            <div class="se-panel">
+                <div class="se-panel-title">📋 현재 선택</div>
+                <div class="se-current-build se-muted">선택된 모듈 없음</div>
+            </div>
+
+            <!-- 충돌 검사 -->
+            <div class="se-panel">
+                <div class="se-panel-title">🔍 조합 검사</div>
+                <div class="se-conflicts">
+                    <span class="se-no-conflict">선택된 모듈이 없습니다.</span>
+                </div>
+            </div>
+
+            <!-- 빌드 경고 -->
+            <div class="se-build-warnings"></div>
+
+            <!-- 빌드 미리보기 -->
+            <div class="se-panel se-preview-panel">
+                <div class="se-panel-title">📄 프롬프트 미리보기</div>
+                <pre class="se-preview-content"></pre>
+            </div>
+
+            <!-- 액션 버튼 -->
+            <div class="se-popup-actions">
+                <button id="se-btn-build" class="se-btn se-btn-primary">
+                    🔨 빌드
+                </button>
+                <button id="se-btn-apply" class="se-btn se-btn-success" disabled>
+                    ✅ 적용
+                </button>
+                <button id="se-btn-reset" class="se-btn se-btn-danger">
+                    🗑️ 초기화
+                </button>
+                <button id="se-btn-close" class="se-btn se-btn-secondary">
+                    ✕ 닫기
+                </button>
+            </div>
         </div>
     </div>
 </div>
