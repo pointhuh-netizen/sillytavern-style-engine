@@ -230,14 +230,6 @@ function assemblePrompt(template, slots, masterRules) {
 
 /**
  * 빌드 실행.
- * @param {Object} params
- * @param {string[]} params.selectedModules - 선택된 모듈 ID 배열 (예: ['A-01', 'S-02', 'C-03'])
- * @param {string[]} params.selectedConfigs - 선택된 config mode ID 배열 (예: ['UCC-01', 'NSFW-02'])
- * @param {Object} params.allAxes - loadAllAxes()의 반환값
- * @param {Object} params.allConfigs - loadAllConfigs()의 반환값
- * @param {Object} params.defaultTemplate - loadDefaultTemplate()의 반환값
- * @param {Object} params.masterRules - loadMasterRules()의 반환값
- * @returns {Object} { prompt: string, modules: string[], configs: string[], warnings: string[] }
  */
 export function buildPrompt({
     selectedModules,
@@ -248,13 +240,33 @@ export function buildPrompt({
     masterRules,
 }) {
     const warnings = [];
+    
+    // [추가됨] 방어 코드: 템플릿 로드 누락 방지
+    if (!defaultTemplate) {
+        return {
+            prompt: "⚠️ 템플릿(default-template) 데이터가 없습니다. data-loader.js의 로드 상태를 확인하세요.",
+            modules: selectedModules,
+            configs: selectedConfigs,
+            warnings: ["defaultTemplate is missing"]
+        };
+    }
+
     const template = deepClone(defaultTemplate);
+    
+    // [추가됨] 방어 코드: 객체/배열 속성이 없을 경우 기본값 할당(크래시 방지)
+    template.modules = template.modules || {};
+    template.build_order = template.build_order || [];
+    template.preamble = template.preamble || {};
+    template.preamble.style_reference = template.preamble.style_reference || { default: "" };
+    template.preamble.core_tone = template.preamble.core_tone || { default: "" };
+    masterRules = masterRules || {};
+
     const slots = extractSlots(template);
 
-    // 1. config 처리 (build_priority -1 → 먼저 처리)
+    // 1. config 처리
     for (const cfgId of selectedConfigs) {
         let found = false;
-        for (const cfgData of Object.values(allConfigs)) {
+        for (const cfgData of Object.values(allConfigs || {})) {
             const mode = cfgData.modes?.find((m) => m.id === cfgId);
             if (mode) {
                 found = true;
@@ -269,10 +281,9 @@ export function buildPrompt({
         }
     }
 
-    // 2. 축 모듈 처리 (build_order 순서 + build_order에 없는 축은 후처리)
+    // 2. 축 모듈 처리
     const buildOrder = template.build_order.filter((o) => o !== 'configs');
-    // build_order에 없는 축도 처리 (예: W축)
-    const allAxisKeys = Object.keys(allAxes);
+    const allAxisKeys = Object.keys(allAxes || {});
     const extraAxes = allAxisKeys.filter((k) => !buildOrder.includes(k));
     const fullOrder = [...buildOrder, ...extraAxes];
 
@@ -280,7 +291,6 @@ export function buildPrompt({
         const axisData = allAxes[axisKey];
         if (!axisData) continue;
 
-        // 해당 축에서 선택된 모듈 찾기
         const modulesForAxis = selectedModules.filter((id) => id.startsWith(`${axisKey}-`));
         for (const moduleId of modulesForAxis) {
             const mod = axisData.modules?.find((m) => m.id === moduleId);
@@ -291,7 +301,6 @@ export function buildPrompt({
             if (mod.operations) {
                 applyOperations(slots, mod.operations);
             }
-            // static_override: 모듈 전체 static 교체
             if (mod.static_override) {
                 for (const [modKey, newStatic] of Object.entries(mod.static_override)) {
                     if (template.modules[modKey]) {
