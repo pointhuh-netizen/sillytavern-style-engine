@@ -3,30 +3,8 @@
  * SillyTavern 3rd-party 확장. 문체 조합 빌더를 제공한다.
  */
 
-/**
- * ST API 임포트.
- * 구버전 경로(scripts/extensions/third-party/...)에서는 상대 임포트가 동작하고,
- * 신규 경로(extensions/...)에서는 전역 폴백을 사용한다.
- */
-let extension_settings, eventSource, event_types, saveSettingsDebounced;
-
-try {
-    const [extMod, scriptMod] = await Promise.all([
-        import('../../../extensions.js'),
-        import('../../../../script.js'),
-    ]);
-    extension_settings = extMod.extension_settings;
-    eventSource = scriptMod.eventSource;
-    event_types = scriptMod.event_types;
-    saveSettingsDebounced = scriptMod.saveSettingsDebounced;
-} catch {
-    // 신규 경로 또는 전역 접근 가능한 환경 — 전역 폴백 사용
-    extension_settings = window.extension_settings ?? {};
-    eventSource = window.eventSource;
-    event_types = window.event_types;
-    saveSettingsDebounced = window.saveSettingsDebounced ?? (() => {});
-}
-
+import { extension_settings } from '../../../extensions.js';
+import { eventSource, event_types, saveSettingsDebounced } from '../../../../script.js';
 import { injectPrompt, clearInjection } from './src/prompt-injector.js';
 import { openPopup, openPopupInNewWindow, onChatChanged, clearCurrentBuild } from './src/ui-controller.js';
 import { getExtensionRoot } from './src/data-loader.js';

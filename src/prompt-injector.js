@@ -4,31 +4,8 @@
  * 채팅 메타데이터에 빌드 결과를 저장/로드한다.
  */
 
-/**
- * ST API 임포트.
- * 구버전 경로(scripts/extensions/third-party/...)에서는 상대 임포트가 동작하고,
- * 신규 경로(extensions/...)에서는 전역 폴백을 사용한다.
- */
-let _getContext, _setExtensionPrompt, _extension_settings;
-
-try {
-    const [extMod, scriptMod] = await Promise.all([
-        import('../../../../extensions.js'),
-        import('../../../../script.js'),
-    ]);
-    _getContext = extMod.getContext;
-    _setExtensionPrompt = scriptMod.setExtensionPrompt;
-    _extension_settings = extMod.extension_settings;
-} catch {
-    // 신규 경로 또는 전역 접근 가능한 환경 — 전역 폴백 사용
-    _getContext = () => (typeof getContext === 'function' ? getContext() : null);
-    _setExtensionPrompt = (...args) => {
-        if (typeof setExtensionPrompt === 'function') return setExtensionPrompt(...args);
-        if (window.setExtensionPrompt) return window.setExtensionPrompt(...args);
-        console.warn('[StyleEngine] setExtensionPrompt not available');
-    };
-    _extension_settings = window.extension_settings ?? {};
-}
+import { getContext, extension_settings } from '../../../../extensions.js';
+import { setExtensionPrompt } from '../../../../../script.js';
 
 const EXTENSION_NAME = 'sillytavern-style-engine';
 const METADATA_KEY = 'style_engine_build';
@@ -43,7 +20,7 @@ const INJECTION_DEPTH = 0;
  * @param {Object} buildResult - { prompt, modules, configs, warnings }
  */
 export function saveBuildToChat(buildResult) {
-    const context = _getContext();
+    const context = getContext();
     if (!context) {
         console.warn('[StyleEngine] No context available for saving build.');
         return;
@@ -65,7 +42,7 @@ export function saveBuildToChat(buildResult) {
  * @returns {Object|null} 저장된 빌드 결과, 없으면 null
  */
 export function loadBuildFromChat() {
-    const context = _getContext();
+    const context = getContext();
     if (!context || !context.chat_metadata) {
         return null;
     }
@@ -76,7 +53,7 @@ export function loadBuildFromChat() {
  * 현재 채팅의 빌드 결과를 삭제.
  */
 export function clearBuildFromChat() {
-    const context = _getContext();
+    const context = getContext();
     if (!context || !context.chat_metadata) return;
     delete context.chat_metadata[METADATA_KEY];
     if (typeof context.saveMetadata === 'function') {
@@ -91,7 +68,7 @@ export function clearBuildFromChat() {
  */
 export function injectPrompt() {
     // 비활성화 상태이면 주입 해제 후 종료
-    const settings = _extension_settings[EXTENSION_NAME];
+    const settings = extension_settings[EXTENSION_NAME];
     if (settings && settings.enabled === false) {
         clearInjection();
         return;
@@ -103,7 +80,7 @@ export function injectPrompt() {
         clearInjection();
         return;
     }
-    _setExtensionPrompt(
+    setExtensionPrompt(
         EXTENSION_NAME,
         buildResult.prompt,
         INJECTION_POSITION,
@@ -115,7 +92,7 @@ export function injectPrompt() {
  * 프롬프트 주입 해제 (빈 문자열로 교체).
  */
 export function clearInjection() {
-    _setExtensionPrompt(EXTENSION_NAME, '', INJECTION_POSITION, INJECTION_DEPTH);
+    setExtensionPrompt(EXTENSION_NAME, '', INJECTION_POSITION, INJECTION_DEPTH);
 }
 
 /**
