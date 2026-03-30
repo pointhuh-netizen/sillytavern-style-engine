@@ -37,38 +37,63 @@ async function ensureDataLoaded() {
  * settings.html의 버튼에 연결.
  */
 export async function openPopup() {
-    await ensureDataLoaded();
+    try {
+        await ensureDataLoaded();
 
-    // 기존 팝업이 있으면 제거
-    $('#style-engine-popup').remove();
+        // 기존 팝업이 있으면 제거
+        $('#style-engine-popup').remove();
 
-    // popup.html 로드
-    const root = await getExtensionRoot();
-    const popupHtml = await $.get(`/${root}/popup.html`);
-    $('body').append(popupHtml);
+        // popup.html 경로 로드
+        const root = await getExtensionRoot();
+        const popupUrl = `/${root}/popup.html`;
+        console.log("[StyleEngine] 팝업 화면 로드 시도:", popupUrl);
 
-    // 저장된 상태 복원
-    const saved = loadBuildFromChat();
-    if (saved) {
-        _state.selectedModules = saved.modules || [];
-        _state.selectedConfigs = saved.configs || [];
-    } else {
-        _state.selectedModules = [];
-        _state.selectedConfigs = [];
-    }
+        const popupHtml = await $.get(popupUrl);
+        $('body').append(popupHtml);
 
-    // UI 렌더링
-    renderPopup();
-    bindPopupEvents();
+        // 저장된 상태 복원
+        const saved = loadBuildFromChat();
+        if (saved) {
+            _state.selectedModules = saved.modules || [];
+            _state.selectedConfigs = saved.configs || [];
+        } else {
+            _state.selectedModules = [];
+            _state.selectedConfigs = [];
+        }
 
-    // 팝업 표시
-    $('#style-engine-popup').show();
-    // 드래그 가능하게
-    if ($.fn.draggable) {
-        $('#style-engine-popup').draggable({ handle: '.se-popup-header' });
+        // UI 렌더링
+        renderPopup();
+        bindPopupEvents();
+
+        // [추가/수정됨] 팝업 표시 및 화면 최상단(z-index) 강제 배치
+        const $popup = $('#style-engine-popup');
+        $popup.css({
+            'display': 'block',
+            'z-index': 99999, // 다른 ST UI에 가려지지 않게 최상단으로 끌어올림
+            'position': 'fixed',
+            'top': '10%',
+            'left': '50%',
+            'transform': 'translateX(-50%)',
+            'background-color': 'var(--SmartThemeBlurTintColor, #1e1e1e)', // 기본 배경색 보장
+            'box-shadow': '0 10px 30px rgba(0,0,0,0.5)'
+        });
+
+        // 드래그 가능하게
+        if ($.fn.draggable) {
+            $popup.draggable({ handle: '.se-popup-header' });
+        }
+        
+    } catch (error) {
+        console.error("[StyleEngine] 팝업 로딩 실패 상세 에러:", error);
+        if (typeof toastr !== 'undefined') {
+            toastr.error(
+                '팝업(popup.html)을 불러오지 못했습니다. 확장 폴더 이름이 정확히 "sillytavern-style-engine"인지 확인해 주세요.', 
+                'Style Engine 에러', 
+                { timeOut: 5000 }
+            );
+        }
     }
 }
-
 /**
  * 팝업 UI 전체 렌더링.
  */
