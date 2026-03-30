@@ -1,0 +1,309 @@
+{
+    "version": "1.0.0",
+    "description": "모듈 특성(traits) 스키마. 각 모듈의 결과물 특성을 구조화된 태그로 표현하여 자동 충돌 감지에 사용한다.",
+    "traits": {
+        "pov": {
+            "type": "enum",
+            "values": [
+                "1st",
+                "2nd",
+                "3rd-limited",
+                "3rd-omni",
+                "space",
+                "object",
+                "narrator-voice",
+                "none"
+            ],
+            "description": "시점. 서술의 관찰자가 누구인가.",
+            "applicable_axes": [
+                "A"
+            ]
+        },
+        "inner_access": {
+            "type": "enum",
+            "values": [
+                "full",
+                "fid-only",
+                "self-only",
+                "none"
+            ],
+            "description": "인물 내면 접근 수준.",
+            "applicable_axes": [
+                "A"
+            ]
+        },
+        "fid": {
+            "type": "enum",
+            "values": [
+                "all",
+                "npc-only",
+                "simple",
+                "forbidden",
+                "none"
+            ],
+            "description": "FID(자유 간접 화법) 사용 범위.",
+            "applicable_axes": [
+                "A",
+                "C"
+            ]
+        },
+        "emotion_level": {
+            "type": "enum",
+            "values": [
+                "open",
+                "restrained",
+                "suppressed",
+                "forbidden",
+                "expressive"
+            ],
+            "description": "감정 표현 허용 수준.",
+            "applicable_axes": [
+                "A",
+                "B",
+                "C"
+            ]
+        },
+        "sentence_length": {
+            "type": "enum",
+            "values": [
+                "short",
+                "mixed",
+                "long",
+                "character-driven"
+            ],
+            "description": "지배적 문장 길이.",
+            "applicable_axes": [
+                "A",
+                "B"
+            ]
+        },
+        "sensory_anchor": {
+            "type": "enum",
+            "values": [
+                "touch",
+                "visual",
+                "sound",
+                "temperature",
+                "space-surface",
+                "object-surface",
+                "character-driven",
+                "memory",
+                "default",
+                "tactile-thermal",
+                "auditory-tactile",
+                "visual-behavioral",
+                "olfactory"
+            ],
+            "description": "감각 우선순위의 앵커.",
+            "applicable_axes": [
+                "A",
+                "C"
+            ]
+        },
+        "formality": {
+            "type": "enum",
+            "values": [
+                "archaic",
+                "formal",
+                "neutral",
+                "casual",
+                "mixed",
+                "informal"
+            ],
+            "description": "격식 수준.",
+            "applicable_axes": [
+                "B",
+                "C"
+            ]
+        },
+        "irony": {
+            "type": "boolean",
+            "description": "아이러니/냉소 사용 여부.",
+            "applicable_axes": [
+                "B"
+            ]
+        },
+        "lyricism": {
+            "type": "enum",
+            "values": [
+                "forbidden",
+                "low",
+                "moderate",
+                "high"
+            ],
+            "description": "서정성 수준.",
+            "applicable_axes": [
+                "B",
+                "C"
+            ]
+        },
+        "narrator_presence": {
+            "type": "enum",
+            "values": [
+                "invisible",
+                "subtle",
+                "visible",
+                "storyteller"
+            ],
+            "description": "서술자 존재감.",
+            "applicable_axes": [
+                "A",
+                "B"
+            ]
+        },
+        "personification": {
+            "type": "enum",
+            "values": [
+                "allowed",
+                "limited",
+                "forbidden"
+            ],
+            "description": "의인화 허용 수준. 시점(A축)이 결정하며, B/F축에서 미세 조정 가능.",
+            "applicable_axes": [
+                "A",
+                "B",
+                "C",
+                "F"
+            ]
+        },
+        "temporal_mode": {
+            "type": "enum",
+            "values": [
+                "linear",
+                "flashback",
+                "layered",
+                "ritual",
+                "loop",
+                "martial",
+                "sf"
+            ],
+            "description": "시간 구조.",
+            "applicable_axes": [
+                "A",
+                "E",
+                "C"
+            ]
+        },
+        "slots_touched": {
+            "type": "array",
+            "items": "string",
+            "description": "이 모듈이 교체/추가하는 슬롯 ID 목록. 빌드 충돌 감지에 사용.",
+            "applicable_axes": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "F",
+                "G"
+            ]
+        },
+        "power_dynamic": {
+            "type": "enum",
+            "values": [
+                "submission",
+                "protection",
+                "advisory",
+                "rivalry",
+                "domination",
+                "mentorship",
+                "none"
+            ],
+            "description": "권력 구조 / 위계 관계 유형. 카테고리 ③ 모듈들이 설정.",
+            "applicable_axes": [
+                "G"
+            ]
+        },
+        "mood_category": {
+            "type": "enum",
+            "values": [
+                "고요/내성",
+                "긴장/위협",
+                "몽환/초현실",
+                "고양/에너지",
+                "서정/감성"
+            ],
+            "description": "D축 분위기 모듈의 카테고리 분류.",
+            "applicable_axes": [
+                "D"
+            ]
+        },
+        "setting_era": {
+            "type": "enum",
+            "values": [
+                "pre-modern",
+                "modern",
+                "modern-historical",
+                "future"
+            ],
+            "description": "E축 배경 모듈의 시대 구분.",
+            "applicable_axes": [
+                "E"
+            ]
+        },
+        "setting_space": {
+            "type": "enum",
+            "values": [
+                "general",
+                "school",
+                "office",
+                "arena",
+                "enclosed",
+                "travel"
+            ],
+            "description": "E축 배경 모듈의 공간 유형.",
+            "applicable_axes": [
+                "E"
+            ]
+        },
+        "world_hardness": {
+            "type": "enum",
+            "values": [
+                "safe",
+                "gentle",
+                "moderate",
+                "realistic",
+                "harsh"
+            ],
+            "description": "세계 시뮬레이션 강도. 세계가 유저에게 얼마나 가혹한가. 강도 순서: safe < gentle < moderate < realistic < harsh.",
+            "applicable_axes": [
+                "W"
+            ]
+        },
+        "npc_autonomy": {
+            "type": "enum",
+            "values": [
+                "user-centric",
+                "semi-independent",
+                "fully-autonomous"
+            ],
+            "description": "NPC 자율성 수준. 유저 중심 ↔ 완전 독립.",
+            "applicable_axes": [
+                "W",
+                "G"
+            ]
+        },
+        "conflict_intensity": {
+            "type": "enum",
+            "values": [
+                "none",
+                "minimal",
+                "moderate",
+                "high"
+            ],
+            "description": "갈등 강도. 세계가 유저에게 가하는 마찰의 강도와 빈도.",
+            "applicable_axes": [
+                "W"
+            ]
+        },
+        "lethal_ceiling": {
+            "type": "enum",
+            "values": [
+                "forbidden",
+                "allowed"
+            ],
+            "description": "치명적 결과(사망, 영구 상실, 극단적 트라우마)의 허용 여부. LETHAL 프로토콜 config가 결정.",
+            "applicable_axes": []
+        }
+    }
+}

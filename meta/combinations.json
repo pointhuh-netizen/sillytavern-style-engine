@@ -1,0 +1,2082 @@
+{
+    "version": "2.0.0",
+    "description": "모듈 조합 자동 충돌 감지 규칙. traits 필드를 비교하여 경고/오류를 발생시킨다.",
+    "auto_rules": [
+        {
+            "id": "AUTO-SLOT-OVERLAP",
+            "condition": "두 모듈의 slots_touched에 동일 슬롯이 존재",
+            "severity": "info",
+            "message_ko": "같은 슬롯을 건드리는 모듈이 있습니다. 빌드 순서상 나중 축이 덮어씁니다.",
+            "applies_to": "cross-axis"
+        },
+        {
+            "id": "AUTO-POV-CONFLICT",
+            "condition": "두 모듈이 서로 다른 pov 값을 가짐 (둘 다 non-null, non-none)",
+            "severity": "error",
+            "message_ko": "시점이 충돌합니다. 하나만 선택하거나, 빌드 순서 우선 규칙을 확인하세요."
+        },
+        {
+            "id": "AUTO-SENTENCE-TENSION",
+            "condition": "sentence_length 값이 두 모듈 간 반대 (short ↔ long)",
+            "severity": "warning",
+            "message_ko": "문장 길이 규칙이 충돌합니다. 빌드 순서상 나중 축의 append_rules가 실질적 리듬을 변경할 수 있습니다."
+        },
+        {
+            "id": "AUTO-EMOTION-DOUBLE-SUPPRESS",
+            "condition": "emotion_level이 'suppressed' 또는 'forbidden'인 모듈이 2개 이상",
+            "severity": "info",
+            "message_ko": "감정 표현이 이중으로 억제됩니다. 의도된 선택인지 확인하세요."
+        },
+        {
+            "id": "AUTO-FID-CONFLICT",
+            "condition": "한 모듈이 fid: 'forbidden'이고 다른 모듈이 fid를 'all', 'npc-only', 'simple' 중 하나로 요구",
+            "severity": "error",
+            "message_ko": "FID 사용이 금지된 시점에서 FID를 요구하는 모듈이 선택되었습니다."
+        },
+        {
+            "id": "AUTO-LYRICISM-CLASH",
+            "condition": "lyricism: 'forbidden'인 모듈과 lyricism: 'high'인 모듈이 공존",
+            "severity": "warning",
+            "message_ko": "서정성 규칙이 충돌합니다. 빌드 순서상 먼저 적용된 금지 규칙이 우선할 수 있습니다."
+        },
+        {
+            "id": "AUTO-NARRATOR-1ST-CLASH",
+            "condition": "narrator_presence가 'storyteller'인 모듈과 pov가 '1st'인 모듈이 공존",
+            "severity": "error",
+            "message_ko": "서술자 존재감(이야기꾼)과 1인칭 시점이 충돌합니다."
+        },
+        {
+            "id": "AUTO-PERSONIFICATION-CLASH",
+            "condition": "personification: 'forbidden'인 모듈과 personification: 'allowed'인 모듈이 공존",
+            "severity": "warning",
+            "message_ko": "의인화 금지 규칙이 적용된 상태에서 의인화를 허용하는 모듈이 있습니다. 빌드 순서상 먼저 적용된 축이 우선합니다."
+        },
+        {
+            "id": "RULE-POV-CONFLICT",
+            "type": "trait_mismatch",
+            "severity": "error",
+            "condition": {
+                "trait": "pov",
+                "conflict": "different_values"
+            },
+            "description": "A축/S축 간 시점(pov) trait 값이 다르면 조합 불가.",
+            "affected_axes": [
+                "A"
+            ]
+        },
+        {
+            "id": "RULE-FID-CONFLICT",
+            "type": "trait_mismatch",
+            "severity": "error",
+            "condition": {
+                "trait": "fid",
+                "conflict": "forbidden_vs_required"
+            },
+            "description": "한 모듈이 FID를 금지하고 다른 모듈이 FID를 필수로 요구하면 조합 불가.",
+            "affected_axes": [
+                "A",
+                "B"
+            ]
+        },
+        {
+            "id": "RULE-NARRATOR-1P-CONFLICT",
+            "type": "trait_mismatch",
+            "severity": "error",
+            "condition": {
+                "trait": "narrator_presence",
+                "conflict": "strong_narrator_vs_first_person"
+            },
+            "description": "강한 서술자 존재감 + 1인칭 체험형은 근본적으로 충돌. 서술자가 존재하면 1인칭의 즉시성이 깨진다.",
+            "affected_axes": [
+                "A",
+                "B",
+                "S"
+            ]
+        },
+        {
+            "id": "RULE-SENTENCE-LENGTH-MISMATCH",
+            "type": "trait_mismatch",
+            "severity": "warning",
+            "condition": {
+                "trait": "sentence_length",
+                "conflict": "opposite_values"
+            },
+            "description": "A축/S축이 설정한 문장 길이 경향과 B축이 설정한 경향이 반대일 때 경고. 빌드 순서상 B축이 최종 우선하지만, A축/S축의 서사 리듬이 깨질 수 있다.",
+            "affected_axes": [
+                "B"
+            ]
+        },
+        {
+            "id": "RULE-FORMALITY-MISMATCH",
+            "type": "trait_mismatch",
+            "severity": "warning",
+            "condition": {
+                "trait": "formality",
+                "conflict": "opposite_values"
+            },
+            "description": "A축/S축/B축 간 격식 수준 불일치. 의도적 스타일링이 아니면 어색한 결과물이 나올 수 있다.",
+            "affected_axes": [
+                "B"
+            ]
+        },
+        {
+            "id": "RULE-LYRICISM-CONFLICT",
+            "type": "trait_mismatch",
+            "severity": "warning",
+            "condition": {
+                "trait": "lyricism",
+                "conflict": "opposite_values"
+            },
+            "description": "서정성 수준 충돌. 빌드 순서상 B축 우선이지만 A축/S축의 서사 분위기가 깨질 수 있다.",
+            "affected_axes": [
+                "B"
+            ]
+        },
+        {
+            "id": "RULE-PERSONIFICATION-CONFLICT",
+            "type": "trait_mismatch",
+            "severity": "warning",
+            "condition": {
+                "trait": "personification",
+                "conflict": "forbidden_vs_allowed"
+            },
+            "description": "A축(A-05 공간시점, A-06 사물시점)이 의인화를 금지하는데, B축이나 F축이 의인화를 허용/요구하면 충돌.",
+            "affected_axes": [
+                "A",
+                "B",
+                "F"
+            ]
+        },
+        {
+            "id": "RULE-EMOTION-DOUBLE-SUPPRESS",
+            "type": "trait_overlap",
+            "severity": "info",
+            "condition": {
+                "trait": "emotion_level",
+                "conflict": "both_suppress"
+            },
+            "description": "여러 모듈이 감정 표현을 동시에 억제하면, 결과물이 지나치게 무미건조할 수 있다. 예: A-05(공간시점, 감정 없음) + B-01(건조체, 감정 억제).",
+            "affected_axes": [
+                "A",
+                "B"
+            ]
+        },
+        {
+            "id": "RULE-SLOT-F-COG-OVERLAP",
+            "type": "slot_overlap",
+            "severity": "info",
+            "condition": {
+                "slot": "{F_COG_QUIRKS}",
+                "conflict": "multiple_replace"
+            },
+            "description": "C-01(궁정 정치)이 {F_COG_QUIRKS}를 REPLACE하고, F축 모듈(F-01/F-02/F-03)도 같은 슬롯을 REPLACE한다. 빌드 순서상 F축이 최종 우선이므로 C-01의 인지 설정은 덮어씌워진다.",
+            "affected_modules": [
+                "C-01",
+                "F-01",
+                "F-02",
+                "F-03"
+            ]
+        },
+        {
+            "id": "RULE-S01-F03-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "S-01",
+                    "F-03"
+                ]
+            },
+            "description": "동화적 서술(S-01)과 SF/사이버펑크 기술 체계(F-03)는 근본적으로 충돌. 동화 세계관에 고도 기술이 공존하면 서사 톤이 붕괴한다.",
+            "affected_modules": [
+                "S-01",
+                "F-03"
+            ]
+        },
+        {
+            "id": "RULE-S02-F02-OVERLAP",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "S-02",
+                    "F-02"
+                ]
+            },
+            "description": "무협적 서술(S-02)의 내공/경공 체계와 마법 체계(F-02)가 공존하면 두 초자연 체계의 규칙이 혼재할 수 있다. 하나를 주체계로 설정하고 다른 하나를 부차적으로 처리할 것을 권장.",
+            "affected_modules": [
+                "S-02",
+                "F-02"
+            ]
+        },
+        {
+            "id": "RULE-B07-F03-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "B-07",
+                    "F-03"
+                ]
+            },
+            "description": "고풍체의 어휘와 SF 기술 용어가 충돌할 수 있다. 스팀펑크 같은 의도적 스타일링이 아니면 주의.",
+            "affected_modules": [
+                "B-07",
+                "F-03"
+            ]
+        },
+        {
+            "id": "RULE-C01-B03-FORMALITY",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "C-01",
+                    "B-03"
+                ]
+            },
+            "description": "궁정 정치물의 격식과 구어체의 비격식이 충돌할 수 있다. C-01의 known_conflicts에도 명시됨.",
+            "affected_modules": [
+                "C-01",
+                "B-03"
+            ]
+        },
+        {
+            "id": "RULE-A06-S03-IMPOSSIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "A-06",
+                    "S-03"
+                ]
+            },
+            "description": "사물 시점(A-06)과 서간체(S-03)는 조합 불가. 사물은 편지를 쓸 수 없다.",
+            "affected_modules": [
+                "A-06",
+                "S-03"
+            ]
+        },
+        {
+            "id": "RULE-A05-S03-IMPOSSIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "A-05",
+                    "S-03"
+                ]
+            },
+            "description": "공간 시점(A-05)과 서간체(S-03)는 조합 불가. 공간은 편지를 쓸 수 없다.",
+            "affected_modules": [
+                "A-05",
+                "S-03"
+            ]
+        },
+        {
+            "id": "RULE-S05-A04-INFO",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "S-05",
+                    "A-04"
+                ]
+            },
+            "description": "기록체(S-05)와 전지적 작가 시점(A-04)의 조합. 전지적 기록자가 모든 것을 알고 보고서로 쓰는 형식. '관찰만 기록'이 아닌 '전지적 관점에서 문서화'로 해석된다.",
+            "affected_modules": [
+                "S-05",
+                "A-04"
+            ]
+        },
+        {
+            "id": "RULE-S06-A05-INFO",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "S-06",
+                    "A-05"
+                ]
+            },
+            "description": "구술체(S-06)와 공간 시점(A-05)의 조합. 공간이 이미 시점을 가지므로 공간이 청자에게 이야기를 들려주는 형식으로 해석된다. 공간이 말하는 것처럼 쓸 수 있다.",
+            "affected_modules": [
+                "S-06",
+                "A-05"
+            ]
+        },
+        {
+            "id": "RULE-S06-A06-INFO",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "S-06",
+                    "A-06"
+                ]
+            },
+            "description": "구술체(S-06)와 사물 시점(A-06)의 조합. 사물이 이미 시점을 가지므로 사물이 청자에게 이야기를 들려주는 형식으로 해석된다. 사물이 말하는 것처럼 쓸 수 있다.",
+            "affected_modules": [
+                "S-06",
+                "A-06"
+            ]
+        },
+        {
+            "id": "RULE-S09-A05-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "S-09",
+                    "A-05"
+                ]
+            },
+            "description": "의식의 흐름(S-09)은 인물의 내면이 서술의 본질. 공간에는 의식이 없으므로 조합 불가.",
+            "affected_modules": [
+                "S-09",
+                "A-05"
+            ]
+        },
+        {
+            "id": "RULE-S09-A06-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "S-09",
+                    "A-06"
+                ]
+            },
+            "description": "의식의 흐름(S-09)은 인물의 내면이 서술의 본질. 사물에는 의식이 없으므로 조합 불가.",
+            "affected_modules": [
+                "S-09",
+                "A-06"
+            ]
+        },
+        {
+            "id": "RULE-S09-B05-TENSION",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "S-09",
+                    "B-05"
+                ]
+            },
+            "description": "의식의 흐름(S-09)은 장문 연속 경향인데 간결체(B-05)는 단문 분리를 원칙으로 한다. 의도적이면 실험적 효과.",
+            "affected_modules": [
+                "S-09",
+                "B-05"
+            ]
+        },
+        {
+            "id": "RULE-S10-C05-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "S-10",
+                    "C-05"
+                ]
+            },
+            "description": "신뢰할 수 없는 서술자(S-10)와 심리 스릴러(C-05)의 궁극 시너지 조합. 서술자의 불성실함과 심리적 권력 교전이 맞물린다.",
+            "affected_modules": [
+                "S-10",
+                "C-05"
+            ]
+        },
+        {
+            "id": "RULE-S11-A01-CAUTION",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "S-11",
+                    "A-01"
+                ]
+            },
+            "description": "1인칭 다성(S-11+A-01)은 가능하지만 섹션 구분을 명확히 해야 화자 혼란을 방지할 수 있다.",
+            "affected_modules": [
+                "S-11",
+                "A-01"
+            ]
+        },
+        {
+            "id": "RULE-S12-A05-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "S-12",
+                    "A-05"
+                ]
+            },
+            "description": "공간(A-05)은 일기를 쓸 수 없다. 일기체(S-12)는 인물이 자기 자신에게 쓰는 기록을 전제한다.",
+            "affected_modules": [
+                "S-12",
+                "A-05"
+            ]
+        },
+        {
+            "id": "RULE-S12-A06-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "S-12",
+                    "A-06"
+                ]
+            },
+            "description": "사물(A-06)은 일기를 쓸 수 없다. 일기체(S-12)는 인물이 자기 자신에게 쓰는 기록을 전제한다.",
+            "affected_modules": [
+                "S-12",
+                "A-06"
+            ]
+        },
+        {
+            "id": "RULE-S13-A05-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "S-13",
+                    "A-05"
+                ]
+            },
+            "description": "공간(A-05)은 실시간 중계를 할 수 없다. 실시간 중계체(S-13)는 목격자가 보고하는 구조를 전제한다.",
+            "affected_modules": [
+                "S-13",
+                "A-05"
+            ]
+        },
+        {
+            "id": "RULE-S13-A06-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "S-13",
+                    "A-06"
+                ]
+            },
+            "description": "사물(A-06)은 실시간 중계를 할 수 없다. 실시간 중계체(S-13)는 목격자가 보고하는 구조를 전제한다.",
+            "affected_modules": [
+                "S-13",
+                "A-06"
+            ]
+        },
+        {
+            "id": "RULE-S14-B08-DOUBLE-ARCHAIC",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "S-14",
+                    "B-08"
+                ]
+            },
+            "description": "사관 기록체(S-14)의 구조와 사극투(B-08)의 어조가 결합하면 시너지. 단, 한문 투가 이중으로 과잉될 위험이 있다.",
+            "affected_modules": [
+                "S-14",
+                "B-08"
+            ]
+        },
+        {
+            "id": "RULE-B08-F03-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "B-08",
+                    "F-03"
+                ]
+            },
+            "description": "사극투(B-08)의 한문 투·고어 어휘와 SF/사이버펑크 기술 용어(F-03)는 근본적으로 충돌한다.",
+            "affected_modules": [
+                "B-08",
+                "F-03"
+            ]
+        },
+        {
+            "id": "RULE-G-CAT1-MUTEX",
+            "type": "mutex_group",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "G-01",
+                    "G-02",
+                    "G-03"
+                ],
+                "min_selected": 2
+            },
+            "description": "카테고리 ① 서사 주도권 모듈은 상호 배타. G-01(능동형), G-02(수동형), G-03(대등형) 중 하나만 선택 가능.",
+            "affected_modules": [
+                "G-01",
+                "G-02",
+                "G-03"
+            ]
+        },
+        {
+            "id": "RULE-G10-G15-ISOLATION",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "G-10",
+                    "G-15"
+                ]
+            },
+            "description": "현실적(G-10)과 냉담한(G-15)의 조합: NPC 독립 생활과 냉담함이 합쳐져 유저와의 접점이 매우 줄어들 수 있음. 의도적인 선택이라면 NPC가 거의 접촉하지 않는 관계를 전제로 한다.",
+            "affected_modules": [
+                "G-10",
+                "G-15"
+            ]
+        },
+        {
+            "id": "RULE-G10-G13-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "G-10",
+                    "G-13"
+                ]
+            },
+            "description": "현실적(G-10)과 수상한(G-13)의 시너지: NPC가 단순히 자기 삶이 있어서 비는 시간인지, 진짜 뭔가 숨기는 건지 구분이 안 됨. 모호함이 서스펜스를 강화하는 의도적 조합.",
+            "affected_modules": [
+                "G-10",
+                "G-13"
+            ]
+        },
+        {
+            "id": "RULE-D02-C05-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-02",
+                    "C-05"
+                ]
+            },
+            "description": "D-02(불안/불길)와 C-05(심리스릴러)의 시너지. 일상의 균열이 심리적 권력 교전과 맞물린다.",
+            "affected_modules": [
+                "D-02",
+                "C-05"
+            ]
+        },
+        {
+            "id": "RULE-D02-G13-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-02",
+                    "G-13"
+                ]
+            },
+            "description": "D-02(불안/불길)와 G-13(수상한)의 시너지. NPC가 감추는 것이 있는지, 아니면 그냥 일상인지 구분이 안 되는 불안이 극대화된다.",
+            "affected_modules": [
+                "D-02",
+                "G-13"
+            ]
+        },
+        {
+            "id": "RULE-D02-D16-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-02",
+                    "D-16"
+                ]
+            },
+            "description": "D-02(불안/불길)와 D-16(폭풍 전야)의 시너지. 은은한 불안이 명시적 기다림으로 이어지는 구조. 사건 이전 긴장을 단계적으로 쌓는다.",
+            "affected_modules": [
+                "D-02",
+                "D-16"
+            ]
+        },
+        {
+            "id": "RULE-D02-D03-NOTE",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-02",
+                    "D-03"
+                ]
+            },
+            "description": "D-02(불안/불길)와 D-03(공포/엄습) 동시 선택: 은은한 공포가 직접적 공포로 폭발하는 구조. 서술 리듬이 단계적으로 깨지도록 주의. D-02 → D-03 순으로 전환하는 것이 자연스럽다.",
+            "affected_modules": [
+                "D-02",
+                "D-03"
+            ]
+        },
+        {
+            "id": "RULE-D03-S10-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-03",
+                    "S-10"
+                ]
+            },
+            "description": "D-03(공포/엄습)과 S-10(신뢰할수없는서술자)의 시너지. 서술자가 경험한 공포가 정말 일어난 것인지 독자가 알 수 없다.",
+            "affected_modules": [
+                "D-03",
+                "S-10"
+            ]
+        },
+        {
+            "id": "RULE-D04-C05-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-04",
+                    "C-05"
+                ]
+            },
+            "description": "D-04(압박/질식)와 C-05(심리스릴러)의 시너지. 물리적 압박과 심리적 압박이 동시에 작동한다.",
+            "affected_modules": [
+                "D-04",
+                "C-05"
+            ]
+        },
+        {
+            "id": "RULE-D04-C01-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-04",
+                    "C-01"
+                ]
+            },
+            "description": "D-04(압박/질식)와 C-01(궁정정치)의 시너지. 정치적 선택지의 소거가 물리적 압박감으로 서술된다.",
+            "affected_modules": [
+                "D-04",
+                "C-01"
+            ]
+        },
+        {
+            "id": "RULE-D05-A05-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-05",
+                    "A-05"
+                ]
+            },
+            "description": "D-05(적막/폐허)와 A-05(공간시점)의 시너지. 공간이 서술자가 되어 자신의 폐허를 기록한다.",
+            "affected_modules": [
+                "D-05",
+                "A-05"
+            ]
+        },
+        {
+            "id": "RULE-D06-B02-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-06",
+                    "B-02"
+                ]
+            },
+            "description": "D-06(우울/침잠)과 B-02(서정체)의 시너지. 채도가 낮은 세계를 서정적 언어로 기록하는 효과.",
+            "affected_modules": [
+                "D-06",
+                "B-02"
+            ]
+        },
+        {
+            "id": "RULE-D07-S09-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-07",
+                    "S-09"
+                ]
+            },
+            "description": "D-07(명상/고독)과 S-09(의식의흐름)의 시너지. 사유가 감각과 기억 사이를 자유롭게 흐른다.",
+            "affected_modules": [
+                "D-07",
+                "S-09"
+            ]
+        },
+        {
+            "id": "RULE-D08-S09-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-08",
+                    "S-09"
+                ]
+            },
+            "description": "D-08(몽환/비현실)과 S-09(의식의흐름)의 시너지. 의식의 흐름이 몽환적 경계 해체를 강화한다.",
+            "affected_modules": [
+                "D-08",
+                "S-09"
+            ]
+        },
+        {
+            "id": "RULE-D08-S08-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-08",
+                    "S-08"
+                ]
+            },
+            "description": "D-08(몽환/비현실)과 S-08(몽타주)의 시너지. 감각 경계의 해체가 장면 전환의 비선형성과 맞물린다.",
+            "affected_modules": [
+                "D-08",
+                "S-08"
+            ]
+        },
+        {
+            "id": "RULE-D09-S10-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-09",
+                    "S-10"
+                ]
+            },
+            "description": "D-09(환각/왜곡)와 S-10(신뢰할수없는서술자)의 궁극 조합. 감각이 거짓말하고 서술자도 신뢰할 수 없다.",
+            "affected_modules": [
+                "D-09",
+                "S-10"
+            ]
+        },
+        {
+            "id": "RULE-D10-G01-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-10",
+                    "G-01"
+                ]
+            },
+            "description": "D-10(축제/고양)과 G-01(능동형)의 시너지. 고에너지 분위기에서 NPC가 더 적극적으로 서사를 주도한다.",
+            "affected_modules": [
+                "D-10",
+                "G-01"
+            ]
+        },
+        {
+            "id": "RULE-D11-S02-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-11",
+                    "S-02"
+                ]
+            },
+            "description": "D-11(전투 고조)과 S-02(무협적서술)의 시너지. 신체 반응 중심 분위기가 무협 서술의 초식 교환과 맞물린다.",
+            "affected_modules": [
+                "D-11",
+                "S-02"
+            ]
+        },
+        {
+            "id": "RULE-D13-S07-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-13",
+                    "S-07"
+                ]
+            },
+            "description": "D-13(노스탤지어)과 S-07(회상체)의 시너지. 감각 트리거 회상이 회상체 서술과 자연스럽게 결합한다.",
+            "affected_modules": [
+                "D-13",
+                "S-07"
+            ]
+        },
+        {
+            "id": "RULE-D14-D01-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-14",
+                    "D-01"
+                ]
+            },
+            "description": "D-14(서정적 비)와 D-01(감각적 일상)의 시너지. 일상의 감각 위에 비가 새로운 질감 층을 더한다.",
+            "affected_modules": [
+                "D-14",
+                "D-01"
+            ]
+        },
+        {
+            "id": "RULE-D16-C01-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "D-16",
+                    "C-01"
+                ]
+            },
+            "description": "D-16(폭풍 전야)과 C-01(궁정정치/전쟁)의 시너지. 전쟁 전야의 긴장이 서술 전체를 지배하는 고요하되 팽팽한 분위기.",
+            "affected_modules": [
+                "D-16",
+                "C-01"
+            ]
+        },
+        {
+            "id": "RULE-B09-B12-INCOMPATIBLE",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "B-09",
+                    "B-12"
+                ]
+            },
+            "description": "감성체(B-09)와 하드보일드(B-12)는 감정 표현 방향이 정반대. 감성체는 내면 독백 70%인 반면 하드보일드는 내면 0%. 같은 B축 MUTEX이므로 양립 불가하나 명시적으로 기록.",
+            "affected_modules": [
+                "B-09",
+                "B-12"
+            ]
+        },
+        {
+            "id": "RULE-W02-D04-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-02",
+                    "D-04"
+                ]
+            },
+            "description": "잔잔한 일상(W-02)의 중립 세계와 압박/질식(D-04) 분위기가 충돌. 의도적이라면 일상 속 압박(시험 기간, 취준 스트레스)으로 해석 가능.",
+            "affected_modules": [
+                "W-02",
+                "D-04"
+            ]
+        },
+        {
+            "id": "RULE-W02-D03-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-02",
+                    "D-03"
+                ]
+            },
+            "description": "잔잔한 일상(W-02)의 중립 세계에 공포/엄습(D-03) 분위기가 부자연스러울 수 있다.",
+            "affected_modules": [
+                "W-02",
+                "D-03"
+            ]
+        },
+        {
+            "id": "RULE-W02-C01-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-02",
+                    "C-01"
+                ]
+            },
+            "description": "잔잔한 일상(W-02) 시뮬레이션과 궁정 정치/전쟁 서사(C-01)의 갈등 강도가 충돌.",
+            "affected_modules": [
+                "W-02",
+                "C-01"
+            ]
+        },
+        {
+            "id": "RULE-W05-C05-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "W-05",
+                    "C-05"
+                ]
+            },
+            "description": "현실적 마찰(W-05)과 심리 스릴러(C-05)의 시너지. 일상적 독성(수동공격, 가스라이팅)이 심리 스릴러의 권력 교전과 맞물린다.",
+            "affected_modules": [
+                "W-05",
+                "C-05"
+            ]
+        },
+        {
+            "id": "RULE-W05-D01-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "W-05",
+                    "D-01"
+                ]
+            },
+            "description": "현실적 마찰(W-05)과 감각적 일상(D-01)의 시너지. 스트레스 후 쿨다운 장면에서 감각적 일상이 안식처로 작동한다.",
+            "affected_modules": [
+                "W-05",
+                "D-01"
+            ]
+        },
+        {
+            "id": "RULE-W07-D01-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-07",
+                    "D-01"
+                ]
+            },
+            "description": "가혹한 세계(W-07)와 감각적 일상(D-01)의 분위기 충돌. 의도적이라면 '폭풍 속의 고요' 효과.",
+            "affected_modules": [
+                "W-07",
+                "D-01"
+            ]
+        },
+        {
+            "id": "RULE-W07-C11-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-07",
+                    "C-11"
+                ]
+            },
+            "description": "가혹한 세계(W-07)와 일상 장르(C-11)의 충돌. 가혹한 세계에서 '사건 없는 서사'가 부자연스럽다.",
+            "affected_modules": [
+                "W-07",
+                "C-11"
+            ]
+        },
+        {
+            "id": "RULE-W07-G12-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-07",
+                    "G-12"
+                ]
+            },
+            "description": "가혹한 세계(W-07)에서 사랑스러운(G-12) NPC 반응이 부자연스러울 수 있다. 의도적이라면 잔혹한 세계 속 유일한 따뜻함으로 해석.",
+            "affected_modules": [
+                "W-07",
+                "G-12"
+            ]
+        },
+        {
+            "id": "RULE-W02-E03-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "W-02",
+                    "E-03"
+                ]
+            },
+            "description": "잔잔한 일상(W-02)과 현대 도시(E-03)의 시너지. 도시의 익명성과 일상의 무사건이 자연스럽게 맞물린다.",
+            "affected_modules": [
+                "W-02",
+                "E-03"
+            ]
+        },
+        {
+            "id": "RULE-W02-E04-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "W-02",
+                    "E-04"
+                ]
+            },
+            "description": "잔잔한 일상(W-02)과 학교/캠퍼스(E-04)의 시너지. 학교의 반복적 루틴이 잔잔한 일상의 '아무 일도 없는' 서사에 최적.",
+            "affected_modules": [
+                "W-02",
+                "E-04"
+            ]
+        },
+        {
+            "id": "RULE-W07-E11-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "W-07",
+                    "E-11"
+                ]
+            },
+            "description": "가혹한 세계(W-07)와 포스트아포칼립스(E-11)의 궁극 시너지. 문명 이후 세계의 가혹함이 W-07의 규칙과 완벽하게 맞물린다.",
+            "affected_modules": [
+                "W-07",
+                "E-11"
+            ]
+        },
+        {
+            "id": "RULE-W01-C08-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "error",
+            "condition": {
+                "modules": [
+                    "W-01",
+                    "C-08"
+                ]
+            },
+            "description": "안전한 세계(W-01)와 호러(C-08) 장르는 양립 불가.",
+            "affected_modules": [
+                "W-01",
+                "C-08"
+            ]
+        },
+        {
+            "id": "RULE-W01-D02-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-01",
+                    "D-02"
+                ]
+            },
+            "description": "안전한 세계(W-01)와 불안/불길(D-02) 분위기 충돌.",
+            "affected_modules": [
+                "W-01",
+                "D-02"
+            ]
+        },
+        {
+            "id": "RULE-W01-D03-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-01",
+                    "D-03"
+                ]
+            },
+            "description": "안전한 세계(W-01)와 공포/엄습(D-03) 분위기 충돌.",
+            "affected_modules": [
+                "W-01",
+                "D-03"
+            ]
+        },
+        {
+            "id": "RULE-W01-D04-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-01",
+                    "D-04"
+                ]
+            },
+            "description": "안전한 세계(W-01)와 압박/질식(D-04) 분위기 충돌.",
+            "affected_modules": [
+                "W-01",
+                "D-04"
+            ]
+        },
+        {
+            "id": "RULE-W03-G01-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-03",
+                    "G-01"
+                ]
+            },
+            "description": "평행 세계(W-03)의 NPC 자율성과 능동형(G-01) NPC 반응 충돌. NPC가 먼저 다가오는 빈도가 축소됨.",
+            "affected_modules": [
+                "W-03",
+                "G-01"
+            ]
+        },
+        {
+            "id": "RULE-W03-G12-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "W-03",
+                    "G-12"
+                ]
+            },
+            "description": "평행 세계(W-03)와 사랑스러운(G-12) 시너지. 만남의 희소성이 따뜻함의 밀도를 높임.",
+            "affected_modules": [
+                "W-03",
+                "G-12"
+            ]
+        },
+        {
+            "id": "RULE-W04-C12-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-04",
+                    "C-12"
+                ]
+            },
+            "description": "보호된 마찰(W-04)의 '결국 괜찮아진다'와 느와르(C-12)의 운명론 충돌.",
+            "affected_modules": [
+                "W-04",
+                "C-12"
+            ]
+        },
+        {
+            "id": "RULE-W04-C05-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-04",
+                    "C-05"
+                ]
+            },
+            "description": "보호된 마찰(W-04)에서 심리 스릴러(C-05)의 권력 교전 강도 제한.",
+            "affected_modules": [
+                "W-04",
+                "C-05"
+            ]
+        },
+        {
+            "id": "RULE-W06-G11-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-06",
+                    "G-11"
+                ]
+            },
+            "description": "냉담한 현실(W-06)의 NPC 자율성과 다정한(G-11) NPC 반응 충돌. 다정함이 관계 깊이에 비례하도록 조정.",
+            "affected_modules": [
+                "W-06",
+                "G-11"
+            ]
+        },
+        {
+            "id": "RULE-W06-G20-MISMATCH",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "modules": [
+                    "W-06",
+                    "G-20"
+                ]
+            },
+            "description": "냉담한 현실(W-06)에서 NPC의 보호(G-20) 반응 약화.",
+            "affected_modules": [
+                "W-06",
+                "G-20"
+            ]
+        },
+        {
+            "id": "RULE-W03-E03-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "modules": [
+                    "W-03",
+                    "E-03"
+                ]
+            },
+            "description": "평행 세계(W-03)와 현대 도시(E-03) 시너지. 도시의 익명성과 각자의 삶이 완벽하게 맞물림.",
+            "affected_modules": [
+                "W-03",
+                "E-03"
+            ]
+        }
+    ],
+    "manual_overrides": {
+        "description": "auto_rules로 감지할 수 없는 특수 케이스. 각 모듈의 known_conflicts에 이미 기록된 것과 보완적으로 사용.",
+        "overrides": []
+    },
+    "explicit_pairs": [
+        {
+            "id": "RULE-G19-G23-SUBMISSION-DOMINATION",
+            "modules": [
+                "G-19",
+                "G-23"
+            ],
+            "severity": "error",
+            "description_ko": "복종(G-19)과 지배(G-23)는 유저가 복종+지배 양쪽에 동시에 있을 수 없다. 유저가 위에 있는 NPC(G-19)와 유저 위에 있는 NPC(G-23)가 공존하려면, NPC별로 다른 역할을 명시해야 한다.",
+            "resolution_ko": "의도적이라면 NPC별 역할 분리를 캐릭터 설정에서 명시하세요."
+        },
+        {
+            "id": "RULE-G22-G18-RIVALRY-COMPLIANCE",
+            "modules": [
+                "G-22",
+                "G-18"
+            ],
+            "severity": "warning",
+            "description_ko": "경쟁(G-22)과 순응적(G-18)이 함께 선택되면, NPC가 경쟁하면서도 유저에게 맞춰주는 모순적 행동이 된다.",
+            "resolution_ko": "의도적 긴장이라면 유지. NPC가 겉으로는 순응하면서 속으로는 경쟁하는 구도가 가능."
+        },
+        {
+            "id": "RULE-G20-G23-PROTECTION-DOMINATION",
+            "modules": [
+                "G-20",
+                "G-23"
+            ],
+            "severity": "warning",
+            "description_ko": "보호(G-20)와 지배(G-23)가 함께 선택되면, 보호가 지배의 수단이 될 수 있다. '너를 위해서'라는 명목의 통제.",
+            "resolution_ko": "의도적이라면 강력한 서사 장치. 보호인지 지배인지 모호한 경계가 핵심 갈등이 된다."
+        },
+        {
+            "id": "RULE-G21-G23-ADVISORY-DOMINATION",
+            "modules": [
+                "G-21",
+                "G-23"
+            ],
+            "severity": "warning",
+            "description_ko": "조언(G-21)과 지배(G-23)가 함께 선택되면, 조언이 명령과 구분이 안 된다.",
+            "resolution_ko": "의도적이라면 조언과 명령의 경계가 서사의 핵심 긴장이 된다."
+        },
+        {
+            "id": "RULE-G24-G23-MENTORSHIP-DOMINATION",
+            "modules": [
+                "G-24",
+                "G-23"
+            ],
+            "severity": "warning",
+            "description_ko": "후견(G-24)과 지배(G-23)가 함께 선택되면, 성장 지원이 통제와 구분이 안 된다.",
+            "resolution_ko": "의도적이라면 스승과 독재자의 경계가 서사의 핵심."
+        },
+        {
+            "id": "RULE-G20-G22-PROTECTION-RIVALRY",
+            "modules": [
+                "G-20",
+                "G-22"
+            ],
+            "severity": "info",
+            "description_ko": "보호(G-20)와 경쟁(G-22)의 시너지: NPC가 유저를 지키려 하면서도 유저와 경쟁한다. '나보다 강해져야 보호하지 않아도 되니까'.",
+            "resolution_ko": "의도적 시너지로 활용 가능."
+        },
+        {
+            "id": "RULE-G19-E07-SUBMISSION-OFFICE",
+            "modules": [
+                "G-19",
+                "E-07"
+            ],
+            "severity": "info",
+            "description_ko": "복종(G-19)과 직장/오피스(E-07)의 시너지: 직급 위계가 복종 구조와 자연스럽게 연동된다.",
+            "resolution_ko": "직급 호칭 변화 = 관계 변화의 메커니즘이 강화된다."
+        },
+        {
+            "id": "RULE-C06-C05-ROMANCE-THRILLER",
+            "modules": [
+                "C-06",
+                "C-05"
+            ],
+            "severity": "info",
+            "description_ko": "로맨스(C-06)와 심리 스릴러(C-05)의 시너지: 심리 스릴러의 이중성이 로맨스의 밀당을 강화한다. 신뢰와 배신이 로맨스의 핵심 갈등이 된다.",
+            "resolution_ko": "의도적 시너지. 감정 표현 억제 규칙(C-06)과 FID 자기기만(C-05)이 자연스럽게 결합된다."
+        },
+        {
+            "id": "RULE-C06-G15-ROMANCE-COLD",
+            "modules": [
+                "C-06",
+                "G-15"
+            ],
+            "severity": "info",
+            "description_ko": "로맨스(C-06)와 냉담한 NPC(G-15)의 조합: 슬로번 로맨스. 냉담한 NPC와의 관계 진전이 더디고 긴장감 있는 로맨스를 만든다.",
+            "resolution_ko": "의도적 조합으로 활용 가능. 냉담함의 균열이 서사의 핵심 모멘트."
+        },
+        {
+            "id": "RULE-C07-F03-SF-TECHLEVEL",
+            "modules": [
+                "C-07",
+                "F-03"
+            ],
+            "severity": "info",
+            "description_ko": "SF/사이버펑크(C-07)와 기술 레벨 오버라이드(F-03)의 시너지: 기술 세계관의 정밀도가 높아진다.",
+            "resolution_ko": "의도적 시너지. F-03으로 기술 레벨을 고정하면 C-07의 기술 제약이 더 구체적으로 작동한다."
+        },
+        {
+            "id": "RULE-C07-E01-SF-PREMODERN",
+            "modules": [
+                "C-07",
+                "E-01"
+            ],
+            "severity": "warning",
+            "description_ko": "SF/사이버펑크(C-07)와 전근대 배경(E-01)의 시대 충돌. 기술과 전근대 세계관이 직접 조합되면 설정 충돌이 발생한다.",
+            "resolution_ko": "의도적이라면 타임슬립, 이종 문명 접촉 등 서사적 근거 필요."
+        },
+        {
+            "id": "RULE-C08-D03-HORROR-DREAD",
+            "modules": [
+                "C-08",
+                "D-03"
+            ],
+            "severity": "info",
+            "description_ko": "호러 장르(C-08)와 공포/엄습 분위기(D-03)의 시너지: 장르와 분위기의 이중 강화. 공포 단계 고조가 분위기 레이어와 결합된다.",
+            "resolution_ko": "의도적 시너지. 최고 강도의 공포 서사를 만들 때 추천."
+        },
+        {
+            "id": "RULE-C08-D01-HORROR-EVERYDAY",
+            "modules": [
+                "C-08",
+                "D-01"
+            ],
+            "severity": "info",
+            "description_ko": "호러(C-08)와 감각적 일상(D-01)의 조합: 일상 호러. 평범한 감각의 일상에 공포가 침투하는 구조.",
+            "resolution_ko": "의도적 조합. 일상의 질감이 공포의 침투와 대비되어 효과가 배가된다."
+        },
+        {
+            "id": "RULE-C08-B02-HORROR-LYRICAL",
+            "modules": [
+                "C-08",
+                "B-02"
+            ],
+            "severity": "warning",
+            "description_ko": "호러(C-08)와 서정체(B-02)의 긴장: 서정성이 공포의 날을 무디게 할 수 있다.",
+            "resolution_ko": "의도적이라면 서정적 문체로 공포를 포장하는 효과. 의도적이지 않다면 B축을 변경하는 것을 고려."
+        },
+        {
+            "id": "RULE-C09-D02-COMEDY-ANXIETY",
+            "modules": [
+                "C-09",
+                "D-02"
+            ],
+            "severity": "warning",
+            "description_ko": "코미디/시트콤(C-09)와 불안/불길 분위기(D-02)의 충돌: 코미디 타이밍과 불안 분위기가 서로 상쇄된다.",
+            "resolution_ko": "의도적이라면 블랙 코미디나 코미디 호러로 재해석. 의도적이지 않다면 D-02를 D-01로 교체 권장."
+        },
+        {
+            "id": "RULE-C09-D06-COMEDY-MELANCHOLY",
+            "modules": [
+                "C-09",
+                "D-06"
+            ],
+            "severity": "warning",
+            "description_ko": "코미디/시트콤(C-09)와 우울/침잠(D-06)의 톤 충돌: 희극적 해소와 우울의 방향이 정반대다.",
+            "resolution_ko": "의도적이라면 슬픈 코미디(sad comedy) 장르. 의도적이지 않다면 분위기 축 재검토."
+        },
+        {
+            "id": "RULE-C09-C08-COMEDY-HORROR",
+            "modules": [
+                "C-09",
+                "C-08"
+            ],
+            "severity": "info",
+            "description_ko": "코미디/시트콤(C-09)와 호러(C-08)의 조합: 호러 코미디. 공포와 웃음이 교차하는 장르.",
+            "resolution_ko": "의도적 시너지. 공포와 웃음의 전환이 핵심 메커니즘."
+        },
+        {
+            "id": "RULE-C10-C01-DARKFANTASY-COURT",
+            "modules": [
+                "C-10",
+                "C-01"
+            ],
+            "severity": "info",
+            "description_ko": "다크 판타지(C-10)와 궁정 정치/전쟁 서사(C-01)의 시너지: 잔혹한 정치 판타지. 궁정 정치의 이중성과 다크 판타지의 도덕적 모호성이 결합된다.",
+            "resolution_ko": "의도적 시너지. 두 모듈 모두 그레이 모럴리티를 강화하는 방향으로 작동한다."
+        },
+        {
+            "id": "RULE-C10-C03-DARKFANTASY-FAIRYTALE",
+            "modules": [
+                "C-10",
+                "C-03"
+            ],
+            "severity": "info",
+            "description_ko": "다크 판타지(C-10)와 동화/우화(C-03)의 조합: 잔혹 동화. 동화 구조 위에 다크 판타지의 냉혹함을 덮는다.",
+            "resolution_ko": "의도적 조합. 동화의 금기·변신·보상 구조가 다크 판타지의 대가 시스템과 결합된다."
+        },
+        {
+            "id": "RULE-C10-F02-DARKFANTASY-MAGIC",
+            "modules": [
+                "C-10",
+                "F-02"
+            ],
+            "severity": "info",
+            "description_ko": "다크 판타지(C-10)와 마법 체계(F-02)의 시너지: 힘의 대가와 마법 비용 시스템이 결합되어 정교한 마법 세계관을 만든다.",
+            "resolution_ko": "의도적 시너지. F-02의 마법 규칙이 C-10의 대가 원칙과 자연스럽게 연동된다."
+        },
+        {
+            "id": "RULE-C11-D01-EVERYDAY-DAILY",
+            "modules": [
+                "C-11",
+                "D-01"
+            ],
+            "severity": "info",
+            "description_ko": "일상 장르(C-11)와 감각적 일상 분위기(D-01)의 시너지: 장르+분위기 최적 조합. 두 모듈이 같은 방향으로 서사를 강화한다.",
+            "resolution_ko": "의도적 최적 조합. 일상의 질감을 가장 풍성하게 만들 수 있는 조합."
+        },
+        {
+            "id": "RULE-C11-C01-EVERYDAY-COURT",
+            "modules": [
+                "C-11",
+                "C-01"
+            ],
+            "severity": "warning",
+            "description_ko": "일상 장르(C-11)와 궁정 정치(C-01)의 장르 톤 충돌: 일상의 이완과 궁정 정치의 긴장이 상충된다.",
+            "resolution_ko": "의도적이라면 궁정 일상(궁중 생활의 루틴)으로 재해석 가능. 의도적이지 않다면 장르 축 재검토."
+        },
+        {
+            "id": "RULE-C11-C08-EVERYDAY-HORROR",
+            "modules": [
+                "C-11",
+                "C-08"
+            ],
+            "severity": "info",
+            "description_ko": "일상 장르(C-11)와 호러(C-08)의 조합: 일상 호러. 평범한 일상에 공포가 침투하는 구조.",
+            "resolution_ko": "의도적 시너지. 일상의 루틴이 무너지는 순간이 공포의 핵심."
+        },
+        {
+            "id": "RULE-C12-C05-NOIR-THRILLER",
+            "modules": [
+                "C-12",
+                "C-05"
+            ],
+            "severity": "info",
+            "description_ko": "느와르(C-12)와 심리 스릴러(C-05)의 시너지: 느와르 스릴러. 심리 스릴러의 심리전과 느와르의 운명론이 결합된다.",
+            "resolution_ko": "의도적 시너지. 배신과 자기기만이 공존하는 강도 높은 장르 조합."
+        },
+        {
+            "id": "RULE-C12-B06-NOIR-CYNICAL",
+            "modules": [
+                "C-12",
+                "B-06"
+            ],
+            "severity": "info",
+            "description_ko": "느와르(C-12)와 냉소체(B-06)의 시너지: 냉소적 문체가 느와르의 세계관과 자연스럽게 결합된다.",
+            "resolution_ko": "의도적 시너지. B-06의 냉소적 문체가 느와르의 운명론을 서술 차원에서 강화한다."
+        },
+        {
+            "id": "RULE-C12-D02-NOIR-ANXIETY",
+            "modules": [
+                "C-12",
+                "D-02"
+            ],
+            "severity": "info",
+            "description_ko": "느와르(C-12)와 불안/불길 분위기(D-02)의 시너지: 불안한 분위기가 느와르의 운명론적 긴장을 증폭시킨다.",
+            "resolution_ko": "의도적 시너지. 세계의 기본 질감(비, 밤, 그림자)이 불안 분위기와 중첩된다."
+        },
+        {
+            "id": "RULE-E03-D01-SYNERGY",
+            "modules": [
+                "E-03",
+                "D-01"
+            ],
+            "severity": "info",
+            "description_ko": "현대 도시(E-03)와 감각적 일상(D-01)의 시너지. 현대 도시 일상의 감각이 D-01의 '사건 없는 서사'에 자연스럽게 맞물린다.",
+            "resolution_ko": "의도적 시너지. 도시의 일상적 감각(소음, 빛, 냄새)이 D-01의 분위기 앵커와 결합된다."
+        },
+        {
+            "id": "RULE-E03-E01-ERA-CLASH",
+            "modules": [
+                "E-03",
+                "E-01"
+            ],
+            "severity": "warning",
+            "description_ko": "현대 도시(E-03)와 전근대 궁정(E-01)의 물질문화 충돌. 두 배경의 기술·사회 수준이 근본적으로 다르다.",
+            "resolution_ko": "의도적이라면 시간여행/이세계 전제를 서사 설정에 명시하세요."
+        },
+        {
+            "id": "RULE-E03-E02-ERA-CLASH",
+            "modules": [
+                "E-03",
+                "E-02"
+            ],
+            "severity": "warning",
+            "description_ko": "현대 도시(E-03)와 강호/무림(E-02)의 물질문화 충돌. 두 배경의 기술·사회 수준이 다르다.",
+            "resolution_ko": "의도적이라면 현대 무협 장르(현대 도시에 무림이 공존)라는 전제를 명시하세요."
+        },
+        {
+            "id": "RULE-E04-D01-SYNERGY",
+            "modules": [
+                "E-04",
+                "D-01"
+            ],
+            "severity": "info",
+            "description_ko": "학교/캠퍼스(E-04)와 감각적 일상(D-01)의 시너지. 학교의 반복적 일상이 D-01의 '사건 없는 서사'에 잘 맞는다.",
+            "resolution_ko": "의도적 시너지. 수업·쉬는 시간·하굣길 등 캠퍼스 루틴이 일상 분위기를 강화한다."
+        },
+        {
+            "id": "RULE-E04-E01-ERA-CLASH",
+            "modules": [
+                "E-04",
+                "E-01"
+            ],
+            "severity": "warning",
+            "description_ko": "학교/캠퍼스(E-04)와 전근대 궁정(E-01)의 물질문화 충돌. 근대적 교육 제도와 전근대 궁정 문화가 공존하려면 별도 설정이 필요하다.",
+            "resolution_ko": "의도적이라면 이세계 학원이나 시간여행 설정을 명시하세요."
+        },
+        {
+            "id": "RULE-E04-E02-ERA-CLASH",
+            "modules": [
+                "E-04",
+                "E-02"
+            ],
+            "severity": "warning",
+            "description_ko": "학교/캠퍼스(E-04)와 강호/무림(E-02)의 물질문화 충돌. 근대적 학교 공간과 무림 세계의 물질 조건이 다르다.",
+            "resolution_ko": "의도적이라면 무협 학원물 설정을 명시하세요."
+        },
+        {
+            "id": "RULE-E05-E01-INFO",
+            "modules": [
+                "E-05",
+                "E-01"
+            ],
+            "severity": "info",
+            "description_ko": "서양 중세~르네상스(E-05)와 전근대 궁정(E-01)의 조합. 동서양 궁정 배경의 교차 가능. 동일 세계관으로 설정하면 문화 혼합에 주의가 필요하다.",
+            "resolution_ko": "의도적 조합이라면 두 궁정 문화의 충돌 서사로 활용 가능. 단일 세계관 내 혼합 시 문화 일관성을 유지하세요."
+        },
+        {
+            "id": "RULE-E06-E01-ERA-CLASH",
+            "modules": [
+                "E-06",
+                "E-01"
+            ],
+            "severity": "warning",
+            "description_ko": "한국 근현대(E-06)와 전근대 궁정(E-01)의 물질문화 충돌. E-06은 1945~1980년대 배경으로 전근대 궁정 문화와 시대적으로 충돌한다.",
+            "resolution_ko": "의도적이라면 시간여행이나 병렬 세계 설정을 명시하세요."
+        },
+        {
+            "id": "RULE-E06-E02-ERA-CLASH",
+            "modules": [
+                "E-06",
+                "E-02"
+            ],
+            "severity": "warning",
+            "description_ko": "한국 근현대(E-06)와 강호/무림(E-02)의 물질문화 충돌. 근현대 한국의 사회 구조와 무림 세계관이 충돌한다.",
+            "resolution_ko": "의도적이라면 근현대 무협 설정(현대에 숨어든 무림)을 명시하세요."
+        },
+        {
+            "id": "RULE-E07-E01-ERA-CLASH",
+            "modules": [
+                "E-07",
+                "E-01"
+            ],
+            "severity": "warning",
+            "description_ko": "직장/오피스(E-07)와 전근대 궁정(E-01)의 물질문화 충돌. 현대 직장 환경과 전근대 궁정 문화의 물질 조건이 근본적으로 다르다.",
+            "resolution_ko": "의도적이라면 시간여행이나 이세계 사무실 설정을 명시하세요."
+        },
+        {
+            "id": "RULE-E07-E02-ERA-CLASH",
+            "modules": [
+                "E-07",
+                "E-02"
+            ],
+            "severity": "warning",
+            "description_ko": "직장/오피스(E-07)와 강호/무림(E-02)의 물질문화 충돌. 현대 직장 구조와 무림 세계관의 물질 조건이 다르다.",
+            "resolution_ko": "의도적이라면 현대 직장에 무림 조직이 위장한 설정을 명시하세요."
+        },
+        {
+            "id": "RULE-E09-D02-SYNERGY",
+            "modules": [
+                "E-09",
+                "D-02"
+            ],
+            "severity": "info",
+            "description_ko": "밀실/폐쇄 공간(E-09)와 불안/불길(D-02)의 시너지. 밀실의 고립이 불안의 배경 조건이 된다.",
+            "resolution_ko": "의도적 시너지. 탈출 불가능한 공간이 불안과 불길함의 물리적 근거를 강화한다."
+        },
+        {
+            "id": "RULE-E09-D04-SYNERGY",
+            "modules": [
+                "E-09",
+                "D-04"
+            ],
+            "severity": "info",
+            "description_ko": "밀실/폐쇄 공간(E-09)와 압박/질식(D-04)의 강한 시너지. 물리적 공간의 압축이 심리적 압박과 직결된다.",
+            "resolution_ko": "강한 의도적 시너지. 좁은 공간이 D-04의 숨막히는 분위기를 배가시킨다."
+        },
+        {
+            "id": "RULE-E09-C02-SYNERGY",
+            "modules": [
+                "E-09",
+                "C-02"
+            ],
+            "severity": "info",
+            "description_ko": "밀실/폐쇄 공간(E-09)와 추리 색채(C-02)의 시너지. 밀실 추리는 추리 장르의 고전적 조합이다.",
+            "resolution_ko": "의도적 시너지. 밀실이라는 공간 제약이 추리의 용의자 범위를 한정하고 긴장을 고조시킨다."
+        },
+        {
+            "id": "RULE-E08-E09-CONFLICT",
+            "modules": [
+                "E-08",
+                "E-09"
+            ],
+            "severity": "warning",
+            "description_ko": "여행/방랑(E-08)과 밀실/폐쇄 공간(E-09)의 구조적 충돌. 이동과 폐쇄는 서사 구조가 대립한다.",
+            "resolution_ko": "'이동 중 폐쇄 공간'(기차 안, 배 안)은 의도적 시너지로 허용. 그 외에는 두 모듈이 서로의 핵심 긴장을 약화시킨다."
+        },
+        {
+            "id": "RULE-E10-E03-CLASH",
+            "modules": [
+                "E-10",
+                "E-03"
+            ],
+            "severity": "warning",
+            "description_ko": "이세계/이계(E-10)에 현대 도시(E-03) 요소가 침투하면 이세계성이 약화될 수 있다.",
+            "resolution_ko": "의도적 선택(이세계 현대물, 현대 회귀 등)이면 허용. 무의식적 혼입은 이세계성을 훼손한다."
+        },
+        {
+            "id": "RULE-E10-F01-SYNERGY",
+            "modules": [
+                "E-10",
+                "F-01"
+            ],
+            "severity": "info",
+            "description_ko": "이세계/이계(E-10)와 비인간 종족(F-01)의 자연스러운 시너지.",
+            "resolution_ko": "의도적 시너지. 이세계에 비인간 종족이 존재하는 것은 이세계성을 강화한다."
+        },
+        {
+            "id": "RULE-E10-F02-SYNERGY",
+            "modules": [
+                "E-10",
+                "F-02"
+            ],
+            "severity": "info",
+            "description_ko": "이세계/이계(E-10)와 마법 체계(F-02)의 시너지. 이세계 고유 에너지 체계와 마법이 맞물린다.",
+            "resolution_ko": "의도적 시너지. F-02의 마법 체계가 E-10의 이세계 물리법칙을 구체화한다."
+        },
+        {
+            "id": "RULE-E11-D05-SYNERGY",
+            "modules": [
+                "E-11",
+                "D-05"
+            ],
+            "severity": "info",
+            "description_ko": "포스트아포칼립스(E-11)와 적막/폐허(D-05)의 시너지. 문명 붕괴의 물리적 배경이 적막한 분위기를 강화한다.",
+            "resolution_ko": "의도적 시너지. E-11의 폐허 묘사가 D-05의 고요하고 황폐한 분위기와 자연스럽게 맞물린다."
+        },
+        {
+            "id": "RULE-E11-D10-CLASH",
+            "modules": [
+                "E-11",
+                "D-10"
+            ],
+            "severity": "warning",
+            "description_ko": "포스트아포칼립스(E-11)와 축제/고양(D-10)의 이질적 충돌. 문명 붕괴 세계에서 축제 분위기는 이질적.",
+            "resolution_ko": "희귀한 축제 장면은 강렬한 대비 효과를 낼 수 있음. 단 분위기의 부조화를 의도적으로 설계할 것."
+        },
+        {
+            "id": "RULE-E12-E01-ERA-CLASH",
+            "modules": [
+                "E-12",
+                "E-01"
+            ],
+            "severity": "warning",
+            "description_ko": "우주/우주선(E-12)과 전근대 궁정(E-01)의 시대적 괴리.",
+            "resolution_ko": "'우주 제국의 궁정'처럼 의도적 조합은 허용. 무의식적 혼입은 두 세계의 질감을 모두 약화시킨다."
+        },
+        {
+            "id": "RULE-E12-E09-SYNERGY",
+            "modules": [
+                "E-12",
+                "E-09"
+            ],
+            "severity": "info",
+            "description_ko": "우주/우주선(E-12)과 밀실/폐쇄 공간(E-09)의 시너지. 우주선은 본질적으로 폐쇄 공간이다.",
+            "resolution_ko": "의도적 시너지. 우주선의 밀폐성이 E-09의 폐쇄 공간 긴장을 배가시킨다."
+        },
+        {
+            "id": "RULE-E12-B07-CLASH",
+            "modules": [
+                "E-12",
+                "B-07"
+            ],
+            "severity": "warning",
+            "description_ko": "우주/우주선(E-12)과 고풍체(B-07)의 어휘 충돌. 우주 기술 용어와 고풍 어휘가 맞지 않는다.",
+            "resolution_ko": "의도적 대비(고풍 SF)로 사용 가능. 단 어휘 충돌이 몰입을 방해하지 않도록 설계 필요."
+        },
+        {
+            "id": "RULE-E12-F03-SYNERGY",
+            "modules": [
+                "E-12",
+                "F-03"
+            ],
+            "severity": "info",
+            "description_ko": "우주/우주선(E-12)과 기술 레벨(F-03)의 시너지. 우주 기술 수준이 서사의 기술 레벨과 맞물린다.",
+            "resolution_ko": "의도적 시너지. F-03이 E-12의 기술 세계관을 구체화한다."
+        },
+        {
+            "id": "RULE-E13-E15-CLASS-CONTRAST",
+            "modules": [
+                "E-13",
+                "E-15"
+            ],
+            "severity": "warning",
+            "description_ko": "빈민가/하층 사회(E-13)와 귀족 사교계(E-15)의 극단적 계층 대비.",
+            "resolution_ko": "두 세계가 동시에 등장하는 서사에서는 강렬한 시너지. 계층 간 충돌을 주제로 삼는다면 의도적 조합."
+        },
+        {
+            "id": "RULE-E14-E07-INCOMPATIBLE",
+            "modules": [
+                "E-14",
+                "E-07"
+            ],
+            "severity": "error",
+            "description_ko": "전쟁터/전장(E-14)과 직장/오피스(E-07)는 양립 불가. E-07의 '직장'은 민간 직장이며, 전장과 사무실은 구조적으로 충돌한다.",
+            "resolution_ko": "군사 조직의 사무실은 E-07의 '직장' 범위 밖. 두 모듈을 동시에 활성화하지 말 것."
+        },
+        {
+            "id": "RULE-E14-D04-SYNERGY",
+            "modules": [
+                "E-14",
+                "D-04"
+            ],
+            "severity": "info",
+            "description_ko": "전쟁터/전장(E-14)과 압박/질식(D-04)의 시너지. 전장의 물리적 위협이 심리적 압박과 직결된다.",
+            "resolution_ko": "의도적 시너지. 전장의 생사 긴장이 D-04의 숨막히는 분위기를 강화한다."
+        },
+        {
+            "id": "RULE-E14-D11-SYNERGY",
+            "modules": [
+                "E-14",
+                "D-11"
+            ],
+            "severity": "info",
+            "description_ko": "전쟁터/전장(E-14)과 전투 고조(D-11)의 시너지. 전장 배경이 전투 분위기를 극대화한다.",
+            "resolution_ko": "의도적 시너지. E-14의 물질적 현실이 D-11의 전투 에너지에 물리적 근거를 제공한다."
+        },
+        {
+            "id": "RULE-E15-E01-SYNERGY",
+            "modules": [
+                "E-15",
+                "E-01"
+            ],
+            "severity": "info",
+            "description_ko": "귀족 사교계(E-15)와 전근대 궁정(E-01)의 시너지. 궁정 + 사교계는 자연스러운 조합 — 귀족 세계의 두 축.",
+            "resolution_ko": "의도적 시너지. E-01의 궁정 의전과 E-15의 사교계 암투가 맞물려 귀족 세계관을 풍성하게 만든다."
+        },
+        {
+            "id": "RULE-E15-B03-CLASH",
+            "modules": [
+                "E-15",
+                "B-03"
+            ],
+            "severity": "warning",
+            "description_ko": "귀족 사교계(E-15)와 구어체(B-03)의 충돌. 사교계의 격식체와 구어체의 비격식이 이질적.",
+            "resolution_ko": "의도적 대비(격식 세계를 파괴하는 캐릭터)라면 허용. 단 분위기 일관성 손상에 주의."
+        },
+        {
+            "id": "RULE-E15-B07-SYNERGY",
+            "modules": [
+                "E-15",
+                "B-07"
+            ],
+            "severity": "info",
+            "description_ko": "귀족 사교계(E-15)와 고풍체(B-07)의 시너지. 고풍 어휘가 사교계의 격식과 자연스럽게 어울린다.",
+            "resolution_ko": "의도적 시너지. B-07의 고풍 어휘가 E-15의 귀족 사교계 격식을 강화한다."
+        },
+        {
+            "id": "RULE-F04-F02-SYNERGY",
+            "modules": [
+                "F-04",
+                "F-02"
+            ],
+            "severity": "info",
+            "description_ko": "신격/신화 체계(F-04)와 마법 체계(F-02)의 조합. 신성 마법과 세속 마법의 이중 체계가 공존할 수 있다.",
+            "resolution_ko": "의도적 시너지. 신성 마법과 세속 마법의 규칙을 명확히 분리할 것 — 신의 기적은 조건부, 세속 마법은 대가 기반으로 각각의 규칙 체계를 유지한다."
+        },
+        {
+            "id": "RULE-F06-F01-SYNERGY",
+            "modules": [
+                "F-06",
+                "F-01"
+            ],
+            "severity": "info",
+            "description_ko": "변신/비인간화(F-06)와 비인간 종족 체계(F-01)의 조합. 변신이 종족 특성인 경우 두 모듈의 인지 규칙이 보완적으로 작동한다.",
+            "resolution_ko": "의도적 시너지. F-01의 비인간 종족 인지 규칙과 F-06의 변신 인지 전환이 맞물려 비인간 존재의 인지를 다층적으로 구성한다."
+        },
+        {
+            "id": "RULE-F07-F04-SYNERGY",
+            "modules": [
+                "F-07",
+                "F-04"
+            ],
+            "severity": "info",
+            "description_ko": "계약/저주 시스템(F-07)과 신격/신화 체계(F-04)의 조합. 신의 계약/저주가 신격 체계의 규칙 안에서 작동한다.",
+            "resolution_ko": "의도적 시너지. 신과의 계약은 신격 규칙의 조건(제물, 서약, 자격)을 따르며, 저주는 신벌의 형태로 물리적으로 현현한다."
+        },
+        {
+            "id": "RULE-F09-S07-SYNERGY",
+            "modules": [
+                "F-09",
+                "S-07"
+            ],
+            "severity": "info",
+            "description_ko": "시간 조작(F-09)과 몽타주 서술(S-07)의 조합. 시간 가속 장면과 몽타주 서술이 완벽한 시너지를 이룬다.",
+            "resolution_ko": "의도적 시너지. F-09의 시간 가속 리듬 규칙과 S-07의 몽타주 압축 서술이 결합하여 시간 조작 장면을 극적으로 강화한다."
+        },
+        {
+            "id": "RULE-F09-S09-CAUTION",
+            "modules": [
+                "F-09",
+                "S-09"
+            ],
+            "severity": "warning",
+            "description_ko": "시간 조작(F-09)과 의식의 흐름(S-09)의 조합. 시간 왜곡과 의식의 흐름이 결합하면 서술이 난해해질 수 있다.",
+            "resolution_ko": "강력한 조합이지만 독자가 따라가기 어려울 수 있다. 시간 구조의 앵커 포인트를 명확히 설정하고, 독자가 현재 시점을 파악할 수 있는 단서를 유지할 것."
+        },
+        {
+            "id": "RULE-F10-F03-SYNERGY",
+            "modules": [
+                "F-10",
+                "F-03"
+            ],
+            "severity": "info",
+            "description_ko": "가상 세계/시뮬레이션(F-10)과 기술 레벨 오버라이드(F-03)의 조합. 사이버펑크 VR의 자연스러운 조합.",
+            "resolution_ko": "의도적 시너지. F-03의 기술 규칙(한계, 부작용, 신체 경험)이 F-10의 가상 세계 접속/해제 감각과 맞물려 사이버펑크 VR 세계관을 강화한다."
+        },
+        {
+            "id": "RULE-F11-F06-SYNERGY",
+            "modules": [
+                "F-11",
+                "F-06"
+            ],
+            "severity": "info",
+            "description_ko": "동물 언어 각성(F-11)과 변신/비인간화(F-06)의 조합. 동물 언어 각성이 변신의 전조이거나 부작용일 수 있다.",
+            "resolution_ko": "의도적 시너지. F-11의 감각 우선순위 교란(후각/청각 상승)이 F-06의 변신 전조 증상으로 해석되거나, 변신 후 잔여 인지로 연결될 수 있다."
+        },
+        {
+            "id": "RULE-F13-G19-SYNERGY",
+            "modules": [
+                "F-13",
+                "G-19"
+            ],
+            "severity": "info",
+            "description_ko": "오메가버스 세계관(F-13)과 복종 상호작용(G-19)의 조합. 오메가 역할과 복종 인터랙션의 시너지.",
+            "resolution_ko": "의도적 시너지. F-13의 오메가 복종/도피 본능과 G-19의 복종 인터랙션이 맞물려 2차 성별 역학을 강화한다."
+        },
+        {
+            "id": "RULE-F13-G01-CAUTION",
+            "modules": [
+                "F-13",
+                "G-01"
+            ],
+            "severity": "warning",
+            "description_ko": "오메가버스 세계관(F-13)과 존댓말 일관(G-01)의 조합. 히트/러트 장면에서 경어 체계 유지 여부 검토 필요.",
+            "resolution_ko": "히트/러트 중 본능이 이성을 잠식하는 단계에서 경어 체계 유지 여부를 사전에 결정할 것. 의도적 대비(극한 상황에서도 경어 유지)라면 허용하되, 어조 일관성에 주의."
+        },
+        {
+            "id": "RULE-F14-F05-SYNERGY",
+            "modules": [
+                "F-14",
+                "F-05"
+            ],
+            "severity": "info",
+            "description_ko": "센티넬버스 세계관(F-14)과 정신 능력/초능력(F-05)의 조합. 가이드의 공감 능력과 초능력의 중첩.",
+            "resolution_ko": "가이드의 공감 능력과 F-05의 초능력 규칙이 겹칠 수 있다. 가이드의 공감은 F-14 규칙(차폐 비용, 본딩)을 따르고, 별도의 초능력은 F-05 규칙(신체적 대가, 감각 과부하)을 따르도록 규칙을 분리할 것."
+        },
+        {
+            "id": "RULE-F13-F14-INCOMPATIBLE",
+            "modules": [
+                "F-13",
+                "F-14"
+            ],
+            "severity": "error",
+            "description_ko": "오메가버스(F-13)와 센티넬버스(F-14)의 조합. 두 개의 2차 생물학 체계가 충돌한다.",
+            "resolution_ko": "두 세계관은 각자 독립적인 2차 생물학 체계를 전제로 한다. 하나만 선택하거나, 의도적 융합 세계관(오메가 + 센티넬 혼합 세계)임을 명시하고 충돌하는 규칙을 사전에 조율해야 한다."
+        },
+        {
+            "id": "RULE-F05-F02-CAUTION",
+            "modules": [
+                "F-05",
+                "F-02"
+            ],
+            "severity": "warning",
+            "description_ko": "정신 능력/초능력(F-05)과 마법 체계(F-02)의 조합. 두 초자연 체계의 규칙이 혼재할 수 있다.",
+            "resolution_ko": "초능력(비마법적 초자연)과 마법(초자연적 기술)의 규칙 차이를 명확히 구분할 것. 하나를 주체계로 설정하고 다른 하나를 부차적으로 처리하거나, 두 체계의 상호작용 규칙을 사전에 정의할 것."
+        },
+        {
+            "id": "RULE-F08-D05-SYNERGY",
+            "modules": [
+                "F-08",
+                "D-05"
+            ],
+            "severity": "info",
+            "description_ko": "사후 세계/영혼(F-08)과 적막/폐허(D-05)의 조합. 폐허에 머무는 영혼의 분위기 시너지.",
+            "resolution_ko": "의도적 시너지. D-05의 적막과 물질 부재의 감각이 F-08의 영혼 현현(냉기, 잔향, 규칙)과 맞물려 사후 세계의 분위기를 극대화한다."
+        },
+        {
+            "id": "RULE-B11-S01-SYNERGY",
+            "modules": [
+                "B-11",
+                "S-01"
+            ],
+            "severity": "info",
+            "description_ko": "동화체(B-11)와 동화적 서술(S-01)의 시너지. S-01이 서사 구조(3의 법칙, 금기와 위반)를, B-11이 어조(~했답니다 종결)를 담당하여 완전한 동화 서사를 구축한다.",
+            "resolution_ko": "의도적 시너지. 최적 조합."
+        },
+        {
+            "id": "RULE-B12-C12-SYNERGY",
+            "modules": [
+                "B-12",
+                "C-12"
+            ],
+            "severity": "info",
+            "description_ko": "하드보일드(B-12)와 느와르(C-12)의 궁극 시너지. 하드보일드 어조가 느와르 장르의 운명론과 맞물려 장르적 완성도를 극대화한다.",
+            "resolution_ko": "의도적 시너지. 최적 조합."
+        },
+        {
+            "id": "RULE-B14-D05-SYNERGY",
+            "modules": [
+                "B-14",
+                "D-05"
+            ],
+            "severity": "info",
+            "description_ko": "속삭임체(B-14)와 적막/폐허(D-05)의 시너지. 작고 불완전한 어조가 소리 없는 공간과 맞물려 적막의 질감을 극대화한다.",
+            "resolution_ko": "의도적 시너지."
+        },
+        {
+            "id": "RULE-B15-S02-NOTE",
+            "modules": [
+                "B-15",
+                "S-02"
+            ],
+            "severity": "info",
+            "description_ko": "무협체(B-15)와 무협적 서술(S-02)의 관계: S-02가 서술 구조(전투 역학, 보법 기하학)와 B_TONE 슬롯을 모두 REPLACE한다. B-15도 같은 B_TONE 슬롯을 REPLACE한다. 같은 B축 MUTEX가 아니라 S축과 B축의 크로스 관계이므로 동시 선택 가능. 빌드 순서상 B축이 S축보다 나중이므로 B-15의 어조가 최종 적용된다. S-02 단독 사용 시 S-02의 B_TONE이 적용되므로 B-15가 별도로 필요하지 않다.",
+            "resolution_ko": "S-02 단독이면 B-15 불필요. S-02 없이 무협 어조만 원하면 B-15 사용."
+        },
+        {
+            "id": "RULE-B15-F03-MISMATCH",
+            "modules": [
+                "B-15",
+                "F-03"
+            ],
+            "severity": "warning",
+            "description_ko": "무협체(B-15)의 강호 어휘와 SF/사이버펑크 기술 용어(F-03)가 충돌할 수 있다. 스팀펑크 무협 같은 의도적 스타일링이 아니면 주의.",
+            "resolution_ko": "의도적이라면 유지. 아니라면 하나만 선택."
+        },
+        {
+            "id": "RULE-B13-B05-NOTE",
+            "modules": [
+                "B-13",
+                "B-05"
+            ],
+            "severity": "warning",
+            "description_ko": "웅장체(B-13)와 간결체(B-05)는 문장 길이 방향이 정반대. 같은 B축 MUTEX이므로 양립 불가하나 명시적으로 기록.",
+            "resolution_ko": "양립 불가. 하나만 선택."
+        },
+        {
+            "id": "RULE-LETHAL01-W01-INFO",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "config_mode": "LETHAL-01",
+                "module": "W-01"
+            },
+            "description": "안전한 세계(W-01) + LETHAL-01: 극히 드문 예상치 못한 비극. 전체 서사에서 0~1회. 안전한 세계의 규칙이 먼저 적용되되, 치명적 결과의 천장만 열림.",
+            "affected_modules": [
+                "W-01"
+            ],
+            "affected_configs": [
+                "LETHAL-01"
+            ]
+        },
+        {
+            "id": "RULE-LETHAL01-W02-INFO",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "config_mode": "LETHAL-01",
+                "module": "W-02"
+            },
+            "description": "잔잔한 일상(W-02) + LETHAL-01: 극히 드문 비극. 일상 속에 갑자기 찾아오는 상실. 전체 서사에서 0~1회.",
+            "affected_modules": [
+                "W-02"
+            ],
+            "affected_configs": [
+                "LETHAL-01"
+            ]
+        },
+        {
+            "id": "RULE-LETHAL01-W03-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "config_mode": "LETHAL-01",
+                "module": "W-03"
+            },
+            "description": "평행 세계(W-03) + LETHAL-01: 시너지. '각자의 삶을 살고 있는데, 어느 날 연락이 안 된다.' 부재 자체가 복선. 조용한 상실의 서사.",
+            "affected_modules": [
+                "W-03"
+            ],
+            "affected_configs": [
+                "LETHAL-01"
+            ]
+        },
+        {
+            "id": "RULE-LETHAL01-W04-INFO",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "config_mode": "LETHAL-01",
+                "module": "W-04"
+            },
+            "description": "보호된 마찰(W-04) + LETHAL-01: 보호가 실패하는 순간의 비극. 동맹이 버텨주다가 한계에 부딪힘. 드묾.",
+            "affected_modules": [
+                "W-04"
+            ],
+            "affected_configs": [
+                "LETHAL-01"
+            ]
+        },
+        {
+            "id": "RULE-LETHAL01-W07-SYNERGY",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "config_mode": "LETHAL-01",
+                "module": "W-07"
+            },
+            "description": "가혹한 세계(W-07) + LETHAL-01: 완전체. 세계의 논리적 귀결로 치명적 결과 발생. CHK-W07-03의 '치명적 결과 금지'가 해제됨.",
+            "affected_modules": [
+                "W-07"
+            ],
+            "affected_configs": [
+                "LETHAL-01"
+            ]
+        },
+        {
+            "id": "RULE-LETHAL01-NSFW00-INFO",
+            "type": "explicit_pair",
+            "severity": "info",
+            "condition": {
+                "config_mode": "LETHAL-01",
+                "config_mode_2": "NSFW-00"
+            },
+            "description": "LETHAL-01 + NSFW-00(전연령): 치명적 결과 허용이지만 묘사가 전연령 수준으로 제한. 사망은 발생하되 잔혹한 묘사 없음. '그는 돌아오지 않았다' 류.",
+            "affected_configs": [
+                "LETHAL-01",
+                "NSFW-00"
+            ]
+        },
+        {
+            "id": "RULE-LETHAL01-NSFW04-WARNING",
+            "type": "explicit_pair",
+            "severity": "warning",
+            "condition": {
+                "config_mode": "LETHAL-01",
+                "config_mode_2": "NSFW-04"
+            },
+            "description": "LETHAL-01 + NSFW-04(무제한): 치명적 결과 + 묘사 제한 없음. 잔혹한 사망, 고어, 극단적 폭력 묘사 가능. 사용자 주의 필요.",
+            "affected_configs": [
+                "LETHAL-01",
+                "NSFW-04"
+            ]
+        }
+    ]
+}
