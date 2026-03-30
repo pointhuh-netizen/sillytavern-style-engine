@@ -229,7 +229,44 @@ function bindPopupEvents() {
         updateConflictDisplay();
     });
 
-// config 선택
+    // [복구됨] 모듈 선택 (축별 mutex/combinable)
+    $popup.on('change', '.se-module-input', function () {
+        const $input = $(this);
+        const moduleId = $input.val();
+        const axisKey = $input.closest('.se-module-card').data('axis');
+        const axisInfo = _loadedData.catalog.axes[axisKey];
+        const isMutex = axisInfo?.type === 'mutex';
+
+        if (isMutex) {
+            _state.selectedModules = _state.selectedModules.filter(
+                (id) => !id.startsWith(`${axisKey}-`)
+            );
+            if ($input.is(':checked')) {
+                _state.selectedModules.push(moduleId);
+            }
+        } else {
+            if ($input.is(':checked')) {
+                if (!_state.selectedModules.includes(moduleId)) {
+                    _state.selectedModules.push(moduleId);
+                }
+            } else {
+                _state.selectedModules = _state.selectedModules.filter((id) => id !== moduleId);
+            }
+        }
+
+        $popup.find(`.se-module-card`).each(function () {
+            const id = $(this).data('module-id');
+            $(this).toggleClass('selected', _state.selectedModules.includes(id));
+        });
+
+        updateConflictDisplay();
+        updateBuildSummary();
+        
+        // 자동 빌드(미리보기 갱신)
+        runBuild(); 
+    });
+
+    // config 선택
     $popup.on('change', 'input[type="radio"][name^="config-"]', function () {
         const $input = $(this);
         const cfgMetaId = $input.attr('name').replace('config-', '');
@@ -253,7 +290,7 @@ function bindPopupEvents() {
         updateConflictDisplay();
         updateBuildSummary();
 
-        // [추가됨] 설정 변경 시 자동 빌드(미리보기 갱신)
+        // 설정 변경 시 자동 빌드(미리보기 갱신)
         runBuild(); 
     });
 
@@ -273,7 +310,7 @@ function bindPopupEvents() {
         updateConflictDisplay();
         updateBuildSummary();
         
-        // [수정됨] 텍스트 임의 삭제 대신 자동 빌드로 빈 상태 반영
+        // 텍스트 임의 삭제 대신 자동 빌드로 빈 상태 반영
         runBuild(); 
     });
 
