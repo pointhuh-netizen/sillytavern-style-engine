@@ -101,7 +101,7 @@
       "operations": {
         "{B_TONE_TEMP}": {
           "mode": "REPLACE",
-          "value": "40 % sensory image / 30 % lingering space (여운·여백) / 20 % action / 10 % dialogue. Temperature: seeping into mood, not stating it. Never name emotions directly (자존심, 불안, 안도, 수치심 등 감정 명사 금지) — convey through sensory imagery and physical behavior only. One interiority per paragraph — 한 문단 안에서 두 인물의 내면을 동시에 서술 금지. Narrator must not assess or label character capabilities or personality traits. 능력·성격 형용사(탁월한, 예민한, 뛰어난, 날카로운 등) + 능력 명사 조합 금지. 인물의 능력은 행동과 결과로 보여줄 것, 서술자가 명명하지 말 것 (예: \"탁월한 청각\" → 구체적 소리를 구분해내는 행동 묘사로 대체)."
+          "value": "40 % sensory image / 30 % lingering space (여운·여백) / 20 % action / 10 % dialogue. Temperature: seeping into mood, not stating it. Never name emotions directly (자존심, 불안, 안도, 수치심 등 감정 명사 금지) — convey through sensory imagery and physical behavior only. One interiority per paragraph with NO exceptions, including scene closings and summary paragraphs — 한 문단 안에서 두 인물의 내면을 동시에 서술 금지. 장면 마무리·요약 문단에서도 예외 없음. Narrator must not assess or label character capabilities or personality traits. 능력·성격 형용사(탁월한, 예민한, 뛰어난, 날카로운 등) + 능력 명사 조합 금지. 인물의 능력은 행동과 결과로 보여줄 것, 서술자가 명명하지 말 것 (예: \"탁월한 청각\" → 구체적 소리를 구분해내는 행동 묘사로 대체). Narrator must also not pass value judgments on characters' actions or intentions. 평가 형용사(알량한, 얄팍한, 비겁한, 한심한 등) 금지 — 인물의 행동은 독자가 판단할 것, 서술자가 평가하지 말 것."
         },
         "{B_TONE_VOCAB}": {
           "mode": "REPLACE",
@@ -109,7 +109,7 @@
         },
         "{B_TONE_FID_GRAMMAR}": {
           "mode": "REPLACE",
-          "value": "In FID sections, the character's sensory impressions color the prose style. Figurative thought permitted. Subtext must remain implicit — show through sensory detail and withheld action, never through narrator's conclusive interpretation. 두 인물의 심리를 같은 문단에서 동시에 확정하는 전지적 해설 금지. When narrating a character's inner state, replace certainty verbs with hedging expressions: 확신했다/믿었다/알았다 → ~인 듯했다/~라고 여기는 것 같았다/~일 거라는 표정이었다. The reader should infer certainty from behavioral evidence, not from the narrator's assertion."
+          "value": "In FID sections, the character's sensory impressions color the prose style. Figurative thought permitted. Subtext must remain implicit — show through sensory detail and withheld action, never through narrator's conclusive interpretation. 두 인물의 심리를 같은 문단에서 동시에 확정하는 전지적 해설 금지. When narrating a character's inner state — whether in FID or third-person narration — replace certainty verbs with hedging expressions. This rule applies everywhere, not only inside FID sections. 확신했다/믿었다/알았다/알고 있었다/확신하고 있었다 → ~인 듯했다/~라고 여기는 것 같았다/~일 거라는 표정이었다/~라는 듯 행동했다. The reader should infer certainty from behavioral evidence, not from the narrator's assertion."
         },
         "{B_TONE_ENDING}": {
           "mode": "REPLACE",
@@ -153,7 +153,7 @@
           "check": {
             "id": "CHK-B02-04",
             "category": "tone",
-            "rule": "Two characters' interiority narrated in the same paragraph? → Separate into different paragraphs, or restrict to one character's observation. 한 문단 내 두 인물 내면 동시 서술 → 분리 또는 한 인물 관찰로 제한.",
+            "rule": "Two characters' interiority narrated in the same paragraph — including scene-closing and summary paragraphs? → Separate into different paragraphs, or restrict to one character's observation. 장면 마무리 문단 포함, 한 문단 내 두 인물 내면 동시 서술 → 분리 또는 한 인물 관찰로 제한.",
             "source": "B-02"
           }
         },
