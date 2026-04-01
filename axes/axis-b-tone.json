@@ -101,15 +101,15 @@
       "operations": {
         "{B_TONE_TEMP}": {
           "mode": "REPLACE",
-          "value": "40 % sensory image / 30 % lingering space (여운·여백) / 20 % action / 10 % dialogue. Temperature: seeping into mood, not stating it. Never name emotions directly (자존심, 불안, 안도, 수치심 등 감정 명사 금지) — convey through sensory imagery and physical behavior only. One interiority per paragraph — 한 문단 안에서 두 인물의 내면을 동시에 서술 금지."
+          "value": "40 % sensory image / 30 % lingering space (여운·여백) / 20 % action / 10 % dialogue. Temperature: seeping into mood, not stating it. Never name emotions directly (자존심, 불안, 안도, 수치심 등 감정 명사 금지) — convey through sensory imagery and physical behavior only. One interiority per paragraph — 한 문단 안에서 두 인물의 내면을 동시에 서술 금지. Narrator must not assess or label character capabilities or personality traits. 능력·성격 형용사(탁월한, 예민한, 뛰어난, 날카로운 등) + 능력 명사 조합 금지. 인물의 능력은 행동과 결과로 보여줄 것, 서술자가 명명하지 말 것 (예: \"탁월한 청각\" → 구체적 소리를 구분해내는 행동 묘사로 대체)."
         },
         "{B_TONE_VOCAB}": {
           "mode": "REPLACE",
-          "value": "Sensory vocabulary actively encouraged: 색채·질감·소리·냄새 어휘. Poetic diction allowed but restrain excess — max one metaphor per paragraph. Do not use vocabulary belonging to opposing tone modules (tone contamination): '건조', '담백', '무미', '보고서', '기록' 등 B-01 계열 어휘를 서정체 서술 안에서 사용 금지."
+          "value": "Sensory vocabulary actively encouraged: 색채·질감·소리·냄새 어휘. Poetic diction allowed but restrain excess — max one metaphor per paragraph. Tone contamination strictly forbidden, with NO exceptions — not even when describing a character's deliberate manner of speaking. Banned words in output: '건조', '건조한', '담백', '무미', '보고서', '기록', '사무적'. 캐릭터가 의도적으로 감정을 숨기는 어조를 쓸 때도, 서술자는 이 단어들 대신 감각적 우회 묘사를 사용할 것 (예: \"건조한 어조\" → \"평소보다 낮고 짧게 끊어지는 말투\")."
         },
         "{B_TONE_FID_GRAMMAR}": {
           "mode": "REPLACE",
-          "value": "In FID sections, the character's sensory impressions color the prose style. Figurative thought permitted. Subtext must remain implicit — show through sensory detail and withheld action, never through narrator's conclusive interpretation. 서술자가 \"A는 ~라고 믿고 있었고, B는 ~를 기다리고 있었다\" 식으로 두 인물의 심리를 동시에 확정하는 전지적 해설 금지."
+          "value": "In FID sections, the character's sensory impressions color the prose style. Figurative thought permitted. Subtext must remain implicit — show through sensory detail and withheld action, never through narrator's conclusive interpretation. 두 인물의 심리를 같은 문단에서 동시에 확정하는 전지적 해설 금지. When narrating a character's inner state, replace certainty verbs with hedging expressions: 확신했다/믿었다/알았다 → ~인 듯했다/~라고 여기는 것 같았다/~일 거라는 표정이었다. The reader should infer certainty from behavioral evidence, not from the narrator's assertion."
         },
         "{B_TONE_ENDING}": {
           "mode": "REPLACE",
@@ -154,6 +154,15 @@
             "id": "CHK-B02-04",
             "category": "tone",
             "rule": "Two characters' interiority narrated in the same paragraph? → Separate into different paragraphs, or restrict to one character's observation. 한 문단 내 두 인물 내면 동시 서술 → 분리 또는 한 인물 관찰로 제한.",
+            "source": "B-02"
+          }
+        },
+        {
+          "mode": "ADD",
+          "check": {
+            "id": "CHK-B02-05",
+            "category": "tone",
+            "rule": "Narrator directly labels character capability or personality trait (탁월한, 예민한, 뛰어난, 날카로운 + 능력 명사)? → Replace with behavioral demonstration. 서술자의 능력 평가 → 행동으로 보여주기.",
             "source": "B-02"
           }
         }
